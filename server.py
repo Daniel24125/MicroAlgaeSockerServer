@@ -17,10 +17,14 @@ class ServerSocker:
         self.server_socket.listen()
         print(f"Server listenning on {port}")
 
-    def receive_cmd(self, client_socket):
+    def receive_cmd(self, client_socket, removeFromList=False):
         data = client_socket.recv(1024)
+        
         if not len(data): 
+            if removeFromList: 
+                self.sockets_list.remove(client_socket)
             raise Exception("An error occured while trying to receive a command, probably due to client disconnection.")
+                   
         cmd = json.loads(data)
         print(f"Command received: {cmd}")
         return cmd
@@ -30,24 +34,33 @@ class ServerSocker:
             raise Exception("Invalid JSON received")
         cmd_received = cmd["cmd"]
         if  cmd_received == "identification": 
-            if cmd["data"] == "nir": 
+            data = cmd["data"]
+            if data == "nir": 
                 self.nir_socket = client_socket
+            elif data == "user":
+                self.socket_list.append(client_socket)
 
-
+        else:
+            raise Exception("Command not recongnized")
+         
 
     def listen_for_connections(self): 
         while True: 
             read_socket, _ , exception_sockets = select.select(self.sockets_list, [], self.sockets_list)
+            print(read_socket)
             for notified_socket in read_socket: 
                 if notified_socket == self.server_socket: 
                     client_socket, client_address = self.server_socket.accept()
                     print(f"A client has connected with the follwoing address: {client_address}")
-                    # client_socket.send(b"Welcome to the python server socket")
+
                     cmd = self.receive_cmd(client_socket)
-                    self.socket_list.append(client_socket)
                     self.parse_cmd(cmd, client_socket)
-            print("New iteration")
+                else: 
+                    cmd = self.receive_cmd(notified_socket, True)
+
             time.sleep(1)
+
+
 
 if __name__ == "__main__": 
     try:
