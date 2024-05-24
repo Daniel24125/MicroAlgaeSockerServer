@@ -9,6 +9,8 @@ PORT = 3000  # Port to listen on (non-privileged ports are > 1023)
 
 class ServerSocker: 
     nir_socket = None
+    is_nir_init = False
+
 
     def __init__(self, port=PORT): 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -29,14 +31,24 @@ class ServerSocker:
         print(f"Command received: {cmd}")
         return cmd
     
+    def init_nir(self, client_socket):
+        self.nir_socket = client_socket
+        print("Requesting NIR status information")
+        send_data = bytes(json.dumps({
+            "cmd": "nir_status"
+        }), "utf-8")
+        client_socket.send(send_data)
+
+
     def parse_cmd(self, cmd, client_socket):
         if not "cmd" in cmd: 
             raise Exception("Invalid JSON received")
         cmd_received = cmd["cmd"]
+        print(f"Parsing the following command: {cmd_received}")
         if  cmd_received == "identification": 
             data = cmd["data"]
             if data == "nir": 
-                self.nir_socket = client_socket
+                self.init_nir(client_socket)
             elif data == "user":
                 self.socket_list.append(client_socket)
 
@@ -51,7 +63,7 @@ class ServerSocker:
             for notified_socket in read_socket: 
                 if notified_socket == self.server_socket: 
                     client_socket, client_address = self.server_socket.accept()
-                    print(f"A client has connected with the follwoing address: {client_address}")
+                    print(f"A client has connected with the following address: {client_address}")
 
                     cmd = self.receive_cmd(client_socket)
                     self.parse_cmd(cmd, client_socket)
