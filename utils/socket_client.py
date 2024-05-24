@@ -19,16 +19,21 @@ class ServerSocker:
         self.server_socket.listen()
         print(f"Server listenning on {port}")
 
-    def receive_cmd(self, client_socket, removeFromList=False):
-        data = client_socket.recv(1024)
-        
+    def handle_client_disconnection(self, client_socket): 
+        print("The client has been disconnected")
+        if client_socket == self.nir_socket: 
+            self.nir_socket = None
+        self.sockets_list.remove(client_socket)
+
+    def receive_cmd(self, client_socket):
+        data = client_socket.recv(1024) 
         if not len(data): 
-            if removeFromList: 
-                self.sockets_list.remove(client_socket)
+            if client_socket == self.nir_socket: 
+                self.handle_client_disconnection(client_socket)           
             raise Exception("An error occured while trying to receive a command, probably due to client disconnection.")
                    
+        print(f"Command received: {data}")
         cmd = json.loads(data)
-        print(f"Command received: {cmd}")
         return cmd
     
     def init_nir(self, client_socket):
@@ -44,66 +49,35 @@ class ServerSocker:
         if not "cmd" in cmd: 
             raise Exception("Invalid JSON received")
         cmd_received = cmd["cmd"]
+        data = cmd["data"]
         print(f"Parsing the following command: {cmd_received}")
         if  cmd_received == "identification": 
-            data = cmd["data"]
             if data == "nir": 
                 self.init_nir(client_socket)
-            elif data == "user":
-                self.socket_list.append(client_socket)
-
+            self.sockets_list.append(client_socket)
+        elif cmd_received == "nir_status":
+            print("NIR Status received")
+            self.is_nir_init = bool(data)
         else:
-            raise Exception("Command not recongnized")
+            print("Command not recongnized")
          
 
     def listen_for_connections(self): 
         while True: 
             read_socket, _ , exception_sockets = select.select(self.sockets_list, [], self.sockets_list)
-            print(read_socket)
+            print("Exception sockets: ")
+            print(exception_sockets)
             for notified_socket in read_socket: 
                 if notified_socket == self.server_socket: 
                     client_socket, client_address = self.server_socket.accept()
                     print(f"A client has connected with the following address: {client_address}")
-
                     cmd = self.receive_cmd(client_socket)
                     self.parse_cmd(cmd, client_socket)
                 else: 
-                    cmd = self.receive_cmd(notified_socket, True)
+                    print("Waiting for Commands...")
+                    cmd = self.receive_cmd(notified_socket)
+                    self.parse_cmd(cmd, notified_socket)
+
 
             time.sleep(1)
 
-
-
-if __name__ == "__main__": 
-    try:
-        server = ServerSocker()
-        server.listen_for_connections()
-    except Exception as e: 
-        print(e)
-
-
-    # server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # server_socket.bind((HOST, PORT))
-    # server_socket.listen()
-    # print(f"Server listenning on {PORT}")
-    # client_socket, addr = server_socket.accept()
-    # print(f"Client connected by {addr}")
-    # client_socket.send(b"Welcome to the python server socket")
-    # data = client_socket.recv(1024)
-    # cmd = json.loads(data)
-
-    # print(cmd["cmd"])
-    # while True:
-    #     read_socket, _ , exception_sockets = select.select()
-        # with client_socket:
-            # print(f"Client connected by {addr}")
-            # client_socket.send(b"Welcome to the python server socket")
-            # try:
-            #     data = client_socket.recv(1024)
-            #     if not data:
-            #         break
-            #     print(data)
-            #     # client_socket.sendall(data)
-            # except Exception as e:
-            #     print("Client disconnected with the following error", repr(e))
-            #     break
