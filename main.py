@@ -3,11 +3,9 @@ from utils.socket_client import ServerSocker
 
 
 if __name__ == "__main__": 
-    try:
-        server = ServerSocker()
-        server.listen_for_connections()
-    except Exception as e: 
-        print(e)
+    server = ServerSocker()
+    server.listen_for_connections()
+
 
 
     # server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
