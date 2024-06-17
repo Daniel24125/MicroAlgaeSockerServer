@@ -23,8 +23,6 @@ class ServerSocker:
             self.init_nir(client_socket)
         self.sockets_list.append(client_socket)
 
-   
-
     def receive_cmd(self, client_socket):
         data = client_socket.recv(1024) 
         if not len(data): 
