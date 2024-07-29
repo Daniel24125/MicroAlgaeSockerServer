@@ -1,10 +1,16 @@
-from utils.socket_client import ServerSocker
+from utils.socket_client import main
+
+import asyncio
+
 
 
 
 if __name__ == "__main__": 
-    server = ServerSocker()
-    server.listen_for_connections()
+    asyncio.run(main())
+
+    # server = ServerSocker()
+    # asyncio.run(server.listen())
+    # asyncio.run(server.listen_for_connections())
 
 
 
