@@ -1,4 +1,4 @@
-from utils.socket_client import main
+from utils.socket_client import ServerSocket
 
 import asyncio
 
@@ -6,9 +6,9 @@ import asyncio
 
 
 if __name__ == "__main__": 
-    asyncio.run(main())
 
-    # server = ServerSocker()
+    server = ServerSocket()
+    server.listen_for_connections()
     # asyncio.run(server.listen())
     # asyncio.run(server.listen_for_connections())
 

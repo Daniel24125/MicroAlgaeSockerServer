@@ -1,4 +1,4 @@
-
+import json
 
 class HSSUSB2A: 
     socket = None
@@ -6,12 +6,16 @@ class HSSUSB2A:
 
     def __init__(self, nir_socket): 
         self.socket = nir_socket
+        self.send_command({
+            "cmd": "nir_status"
+        })
 
     def set_nir_socket(self, nir_socket): 
         self.socket = nir_socket
 
     def send_command(self, command): 
-        self.socket.send(command)
+        send_data = bytes(json.dumps(command), "utf-8")
+        self.socket.send(send_data)
         
     def nir_status(self, data, *argv):
         print("NIR Status received")
