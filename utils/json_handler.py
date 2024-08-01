@@ -1,10 +1,11 @@
 import json 
-from dotenv import load_dotenv
+from .env_handler import load_env
+import datetime 
 import os 
+from .logger import log
 
-load_dotenv()
-
-FILE_PATH = os.getenv("FILE_PATH")
+FILE_PATH = load_env("FILE_PATH")
+BACKUP_FILE_PATH = load_env("BACKUP_FILE_PATH")
 
 class JSON_Handler: 
     updating_experiment = False
@@ -18,30 +19,52 @@ class JSON_Handler:
             self.read_experiment_data()
         return self.experiment_data 
 
-    def read_experiment_data(self): 
-        with open(FILE_PATH, 'r') as f:
-            data = json.load(f)
-            f.close()
-            self.experiment_data = data
+    def read_experiment_data(self, path_to_file = FILE_PATH): 
+        data = self.retrieve_data_from_file(path_to_file)
+        self.experiment_data = data
 
-    def update_experiment_data(self, newData):
+    def update_experiment_data(self, newData, commit_changes = False):
         self.experiment_data = {**self.experiment_data,**newData}
+        if commit_changes: self.commit_experiment_changes()
 
     def commit_experiment_changes(self): 
         if not self.updating_experiment:
-            with open(FILE_PATH, "w") as f:
-                self.updating_experiment = True
-                json_object = json.dumps(self.experiment_data)
-                f.write(json_object)
-                self.updating_experiment = False
+            self.backup_experiment_data()
+            self.updating_experiment = True
+            self.save_data_to_file(self.experiment_data)
+            self.updating_experiment = False
+        else: 
+            log("File is currently being updated...", "warning")
 
+    def backup_experiment_data(self): 
+        log("\nUpdating experiment data...\n", "info")
+        data = self.retrieve_data_from_file(FILE_PATH)
+        backup_path = self.get_backup_path()
+        self.save_data_to_file(data, backup_path)
+
+    # UTILS 
+    def get_backup_path(self): 
+        current_date = str(datetime.datetime.now())
+        backup_path = os.path.join(BACKUP_FILE_PATH.replace("/", "\\"), current_date)
+        backup_path = backup_path.split(".")[0].replace(":", "_")
+        os.mkdir(backup_path)
+        return os.path.join(backup_path,"experiment.json")
+
+    def retrieve_data_from_file(self, path_to_file = FILE_PATH):
+        with open(path_to_file, 'r') as f:
+            data = json.load(f)
+            f.close()
+            return data
+
+    def save_data_to_file(self, data, path_to_file = FILE_PATH):
+        with open(path_to_file, "w") as f:
+            json_object = json.dumps(data)
+            f.write(json_object)
+            f.close()
 
 if __name__ == "__main__": 
     try: 
         file_handler = JSON_Handler()
-        file_handler.update_experiment_data({
-            "_id": "HELLO"
-        })
-        file_handler.commit_experiment_changes()
+       
     except FileNotFoundError as err: 
-        print("Error", err)
+        log("Error", "error")

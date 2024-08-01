@@ -4,13 +4,11 @@ import time
 import socket
 import asyncio
 import select
-from websockets.server import serve
-from websockets.sync.client import connect
-from utils.env_handler import load_env
+from utils import env_handler, json_handler, logger
 
 
-HOST = load_env("HOST")  # Standard loopback interface address (localhost)
-PORT = int(load_env("PORT"))   # Port to listen on (non-privileged ports are > 1023)
+HOST = env_handler.load_env("HOST")  # Standard loopback interface address (localhost)
+PORT = int(env_handler.load_env("PORT"))   # Port to listen on (non-privileged ports are > 1023)
 
 class ServerSocket: 
     spec = None
@@ -20,25 +18,25 @@ class ServerSocket:
         self.sockets_list = [self.server_socket]
         self.server_socket.bind((HOST, port))
         self.server_socket.listen()
-        print(f"Server listenning on {port}")
-    
+        logger.log(f"Server listenning on {port}", "info")
+        self.experiment_data = json_handler.JSON_Handler()
+
     def listen_for_connections(self): 
         while True: 
             read_socket, _ , exception_sockets = select.select(self.sockets_list, [], self.sockets_list)
-
             for notified_socket in read_socket: 
                 try: 
                     if notified_socket == self.server_socket: 
                         client_socket, client_address = self.server_socket.accept()
-                        print(f"A client has connected with the following address: {client_address}")
+                        logger.log(f"A client has connected with the following address: {client_address}", "default")
                         self.receive_cmd(client_socket)
                     else: 
-                        print("Waiting for Commands...")
+                        logger.log("Waiting for Commands...", "default")
                         self.receive_cmd(notified_socket)
 
                 except ConnectionResetError as e: 
                     self.handle_client_disconnection(notified_socket)
-
+                    
             time.sleep(1)
 
     def receive_cmd(self, client_socket):
@@ -48,12 +46,12 @@ class ServerSocket:
                 self.handle_client_disconnection(client_socket)           
             raise Exception("An error occured while trying to receive a command, probably due to client disconnection.")
         
-        print(f"Command received: {data}")
+        logger.log(f"Command received: {data}", "info")
         try: 
             cmd = json.loads(data)
             self.parse_cmd(cmd, client_socket)
         except ValueError as e: 
-            print("Error loading the json file. This probably occurs due to the first connection by the web client", e)
+            logger.log("Error loading the json file. This probably occurs due to the first connection by the web client" + e,"error")
 
     def parse_cmd(self, cmd, client_socket):
         commands = {
@@ -66,30 +64,33 @@ class ServerSocket:
         
         cmd_received = cmd["cmd"]
         data = cmd["data"]
-        print(f"Parsing the following command: {cmd_received}")
+        logger.log(f"Parsing the following command: {cmd_received}", "info")
         if cmd_received in commands: 
             commands[cmd_received](data, client_socket)
         else:
-            print("Command not recognized")
+            logger.log("Command not recognized", "warning")
            
     # Available spectrometer commands
     def identification(self, data, client_socket, *argv):
         if data == "nir": 
-            print("Initializing the Spectrometer instance...")
+            logger.log("Initializing the Spectrometer instance...", "info")
             self.nir_socket = client_socket
             self.spec = HSSUSB2A(client_socket)
         self.sockets_list.append(client_socket)
 
-    def nir_status(self, status): 
-        print("Updating spec status...")
+    def nir_status(self, client_socket, status): 
+        logger.log("Updating spec status...", "info")
         if bool(self.spec): 
             self.spec.nir_status(status)
 
     def handle_client_disconnection(self, client_socket): 
-        print("The client has been disconnected")
+        logger.log("The client has been disconnected")
         if client_socket == self.nir_socket: 
             self.nir_socket = None
             self.spec.set_nir_socket(None)
+            self.experiment_data.update_experiment_data({
+                "isDeviceConnected": False
+            }, True)
         self.sockets_list.remove(client_socket)
 
 

@@ -1,14 +1,15 @@
 import json
-
+from utils.json_handler import JSON_Handler
+from utils.logger import log
 class HSSUSB2A: 
     socket = None
-    is_nir_init = False
 
     def __init__(self, nir_socket): 
         self.socket = nir_socket
         self.send_command({
             "cmd": "nir_status"
         })
+        self.experiment_data = JSON_Handler()
 
     def set_nir_socket(self, nir_socket): 
         self.socket = nir_socket
@@ -18,8 +19,12 @@ class HSSUSB2A:
         self.socket.send(send_data)
         
     def nir_status(self, data, *argv):
-        print("NIR Status received")
-        self.is_nir_init = bool(data)
+        log("NIR Status received", "info")
+        deviceState =  True if data == "True" else False
+        self.experiment_data.update_experiment_data({
+            "isDeviceConnected": deviceState
+        }, True)
+
 
     def get_spectrometer_settings(self, data, *argv): 
         print("get_spectrometer_settings")
