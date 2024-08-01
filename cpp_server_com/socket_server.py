@@ -6,14 +6,11 @@ import asyncio
 import select
 from websockets.server import serve
 from websockets.sync.client import connect
-from dotenv import load_dotenv
-import os 
-
-load_dotenv()
+from utils.env_handler import load_env
 
 
-HOST = os.getenv("HOST")  # Standard loopback interface address (localhost)
-PORT = int(os.getenv("PORT"))   # Port to listen on (non-privileged ports are > 1023)
+HOST = load_env("HOST")  # Standard loopback interface address (localhost)
+PORT = int(load_env("PORT"))   # Port to listen on (non-privileged ports are > 1023)
 
 class ServerSocket: 
     spec = None
@@ -44,8 +41,6 @@ class ServerSocket:
 
             time.sleep(1)
 
-    
-
     def receive_cmd(self, client_socket):
         data = client_socket.recv(1024) 
         if not len(data): 
@@ -59,7 +54,6 @@ class ServerSocket:
             self.parse_cmd(cmd, client_socket)
         except ValueError as e: 
             print("Error loading the json file. This probably occurs due to the first connection by the web client", e)
-            client_socket.send(b"Wrong JSON format")
 
     def parse_cmd(self, cmd, client_socket):
         commands = {
@@ -81,18 +75,23 @@ class ServerSocket:
     # Available spectrometer commands
     def identification(self, data, client_socket, *argv):
         if data == "nir": 
+            print("Initializing the Spectrometer instance...")
+            self.nir_socket = client_socket
             self.spec = HSSUSB2A(client_socket)
         self.sockets_list.append(client_socket)
 
     def nir_status(self, status): 
+        print("Updating spec status...")
         if bool(self.spec): 
             self.spec.nir_status(status)
 
     def handle_client_disconnection(self, client_socket): 
         print("The client has been disconnected")
         if client_socket == self.nir_socket: 
+            self.nir_socket = None
             self.spec.set_nir_socket(None)
         self.sockets_list.remove(client_socket)
+
 
 
 
