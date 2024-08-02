@@ -2,13 +2,12 @@ from cpp_server_com.HSSUSB2A import HSSUSB2A
 import json
 import time
 import socket
-import asyncio
 import select
 from utils import env_handler, json_handler, logger
 
 
-HOST = env_handler.load_env("HOST")  # Standard loopback interface address (localhost)
-PORT = int(env_handler.load_env("PORT"))   # Port to listen on (non-privileged ports are > 1023)
+HOST = env_handler.load_env("CPP_HOST") 
+PORT = int(env_handler.load_env("CPP_PORT"))
 
 class ServerSocket: 
     spec = None
