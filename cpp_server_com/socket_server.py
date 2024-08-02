@@ -1,3 +1,10 @@
+
+import sys
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
 from cpp_server_com.HSSUSB2A import HSSUSB2A
 import json
 import time
@@ -17,7 +24,7 @@ class ServerSocket:
         self.sockets_list = [self.server_socket]
         self.server_socket.bind((HOST, port))
         self.server_socket.listen()
-        logger.log(f"Server listenning on {port}", "info")
+        logger.log(f"Server listenning on port {port}", "info")
         self.experiment_data = json_handler.JSON_Handler()
 
     def listen_for_connections(self): 
@@ -43,7 +50,7 @@ class ServerSocket:
         if not len(data): 
             if hasattr(self, "nir_socket") and client_socket == self.nir_socket: 
                 self.handle_client_disconnection(client_socket)           
-            raise Exception("An error occured while trying to receive a command, probably due to client disconnection.")
+            # raise Exception("An error occured while trying to receive a command, probably due to client disconnection.")
         
         logger.log(f"Command received: {data}", "info")
         try: 
@@ -75,24 +82,41 @@ class ServerSocket:
             logger.log("Initializing the Spectrometer instance...", "info")
             self.nir_socket = client_socket
             self.spec = HSSUSB2A(client_socket)
+        else: 
+            logger.log("NEXJS Client connected", severity="info")
+            self.next_client_socket = client_socket
+
         self.sockets_list.append(client_socket)
 
-    def nir_status(self, client_socket, status): 
+    def nir_status(self, _ , status): 
         logger.log("Updating spec status...", "info")
         if bool(self.spec): 
             self.spec.nir_status(status)
 
+    # Utils methods
     def handle_client_disconnection(self, client_socket): 
         logger.log("The client has been disconnected")
         if client_socket == self.nir_socket: 
-            self.nir_socket = None
-            self.spec.set_nir_socket(None)
-            self.experiment_data.update_experiment_data({
-                "isDeviceConnected": False
-            }, True)
+            self.reset_socket()
         self.sockets_list.remove(client_socket)
 
+    def reset_socket(self):
+        self.nir_socket = None
+        self.spec.set_nir_socket(None)
+        self.experiment_data.update_experiment_data({
+            "isDeviceConnected": False
+        }, True)
 
+    def send_client_commands(self, msg): 
+        if hasattr(self, "next_client_socket"):
+            self.next_client_socket.send(bytes(json.dumps(msg),encoding="utf-8"))
+
+    def send_spectrometer_command(self, msg): 
+        if hasattr(self, "nir_socket"):
+            self.nir_socket.send(bytes(json.dumps(msg),encoding="utf-8"))
+if __name__ == "__main__": 
+    server = ServerSocket()
+    server.listen_for_connections()
 
 
 
