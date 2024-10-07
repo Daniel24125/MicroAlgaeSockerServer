@@ -10,22 +10,26 @@ import json
 import time
 import socket
 import select
-from utils import env_handler, json_handler, logger
+from utils import env_handler, logger, utils
 
 
 HOST = env_handler.load_env("CPP_HOST") 
 PORT = int(env_handler.load_env("CPP_PORT"))
 
-class ServerSocket: 
-    spec = None
+class SpecServerSocket(utils.SocketServer): 
+    device_socket = None
     
     def __init__(self, port=PORT): 
+        super().__init__()
+        self.init_socket(port)
+
+    def init_socket(self, port): 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sockets_list = [self.server_socket]
         self.server_socket.bind((HOST, port))
         self.server_socket.listen()
-        logger.log(f"Server listenning on port {port}", "info")
-        self.experiment_data = json_handler.JSON_Handler()
+        logger.log(f"[Python Spec Socket] Server listenning on port {port}", "info")
+
 
     def listen_for_connections(self): 
         while True: 
@@ -34,88 +38,77 @@ class ServerSocket:
                 try: 
                     if notified_socket == self.server_socket: 
                         client_socket, client_address = self.server_socket.accept()
-                        logger.log(f"A client has connected with the following address: {client_address}", "default")
-                        self.receive_cmd(client_socket)
+                        logger.log(f"[Python Spec Socket] A client has connected with the following address: {client_address}", "default")
+
+                        self.handle_data_reception(client_socket)
                     else: 
-                        logger.log("Waiting for Commands...", "default")
-                        self.receive_cmd(notified_socket)
+                        self.handle_data_reception(notified_socket)
 
                 except ConnectionResetError as e: 
                     self.handle_client_disconnection(notified_socket)
                     
             time.sleep(1)
-
-    def receive_cmd(self, client_socket):
+    
+    def handle_data_reception(self, client_socket):
+        logger.log("[Python Spec Socket] Waiting for Commands...", "default")
         data = client_socket.recv(1024) 
-        if not len(data): 
-            if hasattr(self, "nir_socket") and client_socket == self.nir_socket: 
-                self.handle_client_disconnection(client_socket)           
-            # raise Exception("An error occured while trying to receive a command, probably due to client disconnection.")
-        
-        logger.log(f"Command received: {data}", "info")
-        try: 
-            cmd = json.loads(data)
-            self.parse_cmd(cmd, client_socket)
-        except ValueError as e: 
-            logger.log("Error loading the json file. This probably occurs due to the first connection by the web client" + e,"error")
+        self.receive_cmd(data, client_socket=client_socket)
 
     def parse_cmd(self, cmd, client_socket):
         commands = {
             "identification": self.identification,
-            "nir_status": self.nir_status 
+            "device_status": self.device_status
         }
-        
-        if not "cmd" in cmd: 
-            raise Exception("Invalid JSON received")
-        
-        cmd_received = cmd["cmd"]
-        data = cmd["data"]
-        logger.log(f"Parsing the following command: {cmd_received}", "info")
-        if cmd_received in commands: 
-            commands[cmd_received](data, client_socket)
-        else:
-            logger.log("Command not recognized", "warning")
-           
-    # Available spectrometer commands
+        super().parse_cmd(cmd, client_socket, commands)
+
+
+    # ------------- Available spectrometer commands -----------------
     def identification(self, data, client_socket, *argv):
         if data == "nir": 
-            logger.log("Initializing the Spectrometer instance...", "info")
-            self.nir_socket = client_socket
+            logger.log("[Python Spec Socket] Initializing the Spectrometer instance...", "info")
+            self.device_socket = client_socket
             self.spec = HSSUSB2A(client_socket)
+        elif data == "next": 
+            logger.log("[Python Spec Socket] Command Client connected", severity="info")
+            self.command_client_socket = client_socket
         else: 
-            logger.log("NEXJS Client connected", severity="info")
-            self.next_client_socket = client_socket
-
+            raise Exception("Unauthorized connection.")
         self.sockets_list.append(client_socket)
 
-    def nir_status(self, _ , status): 
-        logger.log("Updating spec status...", "info")
-        if bool(self.spec): 
-            self.spec.nir_status(status)
-
-    # Utils methods
+    
+    def device_status(self, _ , status): 
+        logger.log("[Python Spec Socket] Updating spec status...", "info")
+        self.spec.device_status(status)
+        logger.log("[Python Spec Socket] Retrieving experimental data to NEXJS Server", "warning")
+        self.send_client_commands({"cmd": "notify_subscribers"})
+    
+    # ------------- Utils methods -----------------
     def handle_client_disconnection(self, client_socket): 
-        logger.log("The client has been disconnected")
-        if client_socket == self.nir_socket: 
+        super().handle_client_disconnection(client_socket)
+
+        if client_socket == self.device_socket: 
             self.reset_socket()
         self.sockets_list.remove(client_socket)
 
     def reset_socket(self):
-        self.nir_socket = None
-        self.spec.set_nir_socket(None)
+        self.device_socket = None
+        self.spec.set_device_socket(None)
         self.experiment_data.update_experiment_data({
             "isDeviceConnected": False
         }, True)
 
     def send_client_commands(self, msg): 
-        if hasattr(self, "next_client_socket"):
-            self.next_client_socket.send(bytes(json.dumps(msg),encoding="utf-8"))
-
+        if hasattr(self, "command_client_socket"):
+            self.command_client_socket.send(bytes(json.dumps(msg),encoding="utf-8"))
+        else:
+            logger.log("[Python Spec Socket] Nextjs client not available!", "info")
+    
     def send_spectrometer_command(self, msg): 
-        if hasattr(self, "nir_socket"):
-            self.nir_socket.send(bytes(json.dumps(msg),encoding="utf-8"))
+        if hasattr(self, "device_socket"):
+            self.device_socket.send(bytes(json.dumps(msg),encoding="utf-8"))
+
 if __name__ == "__main__": 
-    server = ServerSocket()
+    server = SpecServerSocket()
     server.listen_for_connections()
 
 
@@ -143,13 +136,13 @@ if __name__ == "__main__":
 #     else:
 #         CONNECTIONS.add(client_socket)
 
-# async def nir_status(data, client_socket): 
+# async def device_status(data, client_socket): 
 #     spec_data = spec if bool(spec) else "Spectrometer not connected!"
 #     await client_socket.send(spec_data)
 
 # COMMANDS = {
 #     "identification": identification,
-#     "nir_status": nir_status
+#     "device_status": device_status
 # }
 
 # async def client_connection_handler(websocket):

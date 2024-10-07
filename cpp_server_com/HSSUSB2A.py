@@ -4,21 +4,22 @@ from utils.logger import log
 class HSSUSB2A: 
     socket = None
 
-    def __init__(self, nir_socket): 
-        self.socket = nir_socket
-        self.send_command({
-            "cmd": "nir_status"
-        })
+
+    def __init__(self, device_socket): 
+        self.device_socket = device_socket
         self.experiment_data = JSON_Handler()
 
-    def set_nir_socket(self, nir_socket): 
-        self.socket = nir_socket
+
+    def set_device_socket(self, device_socket): 
+       self.device_socket = device_socket
+
 
     def send_command(self, command): 
         send_data = bytes(json.dumps(command), "utf-8")
-        self.socket.send(send_data)
+        self.device_socket.send(send_data)
         
-    def nir_status(self, data, *argv):
+
+    def device_status(self, data, *argv):
         log("NIR Status received", "info")
         deviceState =  True if data == "True" else False
         self.experiment_data.update_experiment_data({

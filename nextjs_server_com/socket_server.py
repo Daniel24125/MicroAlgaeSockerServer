@@ -1,82 +1,71 @@
 import asyncio
 from websockets.server import serve
-import json
+import websockets
 import sys
 import os
+import threading
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from utils import env_handler, logger
+from utils import env_handler, logger, utils
 from .command_socket import CommandSocket
 
 PORT = env_handler.load_env("NEXTJS_PORT")
 
-class NextSocketServer: 
+class NextSocketServer(utils.SocketServer): 
     def __init__(self): 
-        asyncio.run(self.connect_server())
+        asyncio.run(self.start_server())
 
-    async def connect_server(self):
+    async def start_server(self):
         async with serve( self.client_connected, host="", port=PORT):
-            logger.log(f"Server listenning on port {PORT}", severity="info")
+            logger.log(f"[NextJS Python Socket Server] Server listenning on port {PORT}", severity="info")
+            self.subscriber = utils.SubscriberClass()
             await asyncio.Future()
    
-    async def client_connected(self,websocket):
-        logger.log("Client connected!", severity="info")
-        async for message in websocket:
+
+    async def client_connected(self,client_socket):
+        logger.log("[NextJS Python Socket Server] Client connected!", severity="info")
+        async for cmd in client_socket:
             try: 
-                self.receive_cmd(message, websocket)
+                self.receive_cmd(cmd, client_socket)
+            except websockets.exceptions.ConnectionClosed:
+                logger.log("[NextJS Python Socket Server] Client Disconnected", severity="error")
             except Exception as err: 
-                logger.log(f"The following error occured {err}", severity="error")
-
-
-    def receive_cmd(self, data, client_socket):
-
-        if not len(data): 
-            self.handle_client_disconnection(client_socket)           
-            # raise Exception("An error occured while trying to receive a command, probably due to client disconnection.")
-        
-        logger.log(f"Command received: {data}", "info")
-        try: 
-            cmd = json.loads(data)
-            self.parse_cmd(cmd, client_socket)
-        except ValueError as e: 
-            logger.log("Error loading the json file. This probably occurs due to the first connection by the web client" + e,"error")
-
+                logger.log(f"[NextJS Python Socket Server] The following error occured {err}", severity="error")
 
     def parse_cmd(self, cmd, client_socket):
         commands = {
             "identification": self.identification,
-            "nir_status": self.nir_status 
+            "notify_subscribers": self.notify_subscribers
         }
-        
-        if not "cmd" in cmd: 
-            raise Exception("Invalid JSON received")
-        
-        cmd_received = cmd["cmd"]
-        data = cmd["data"]
-        logger.log(f"Parsing the following command: {cmd_received}", "info")
-        if cmd_received in commands: 
-            commands[cmd_received](data, client_socket)
-        else:
-            logger.log("Command not recognized", "warning")
-           
-    # Available spectrometer commands
-    def identification(self, data, client_socket, *argv):
-        if data == "next": 
-            logger.log("NEXJS Client connected!", severity="info")
-            self.next_client_socket = client_socket
-            self.command_instance = CommandSocket(client_socket)
-
-        self.sockets_list.append(client_socket)
-
-    def nir_status(self, _ , status): 
-        logger.log("Updating spec status...", "info")
-        if bool(self.spec): 
-            self.spec.nir_status(status)
+        super().parse_cmd(cmd, client_socket, commands)
 
     def handle_client_disconnection(self, client_socket): 
-        logger.log("The client has been disconnected")
+        super().handle_client_disconnection(client_socket)
+        if self.subscriber.get_num_subscribers == 0: 
+            self.command_instance.disconnect()
+
+    # Available commands
+    def identification(self, data, client_socket, *argv):
+        if data == "next": 
+            logger.log("[NextJS Python Socket Server] NEXJS Client connected!", severity="info")
+            self.next_client_socket = client_socket
+            self.subscriber.add_subscriber_to_list(client_socket)
+            self.initiate_command_socket(client_socket)
+
+    def notify_subscribers(self): 
+        self.subscriber.notify_subscribers()
+
+    # Utils
+    def initiate_command_socket(self, client_socket): 
+        if self.subscriber.get_num_subscribers == 0:
+            t1 = threading.Thread(target= self.make_command_socket_connection, args=(client_socket,))
+            t1.start()
+
+    def make_command_socket_connection(self, client_socket): 
+        self.command_instance = CommandSocket(client_socket)
+        
 
 
 if __name__ == "__main__": 

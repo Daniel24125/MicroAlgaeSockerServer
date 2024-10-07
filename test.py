@@ -1,20 +1,17 @@
-import asyncio
-from websockets.server import serve
+class Class1: 
+    def method1(self): 
+        print("This is method 1 from class 1")
 
-PORT = 9000
+    def method2(self): 
+        print("This is method 2 from class 1")
 
-async def echo(websocket):
-    print("client connected")
-    async for message in websocket:
-        print(message)
-        # await websocket.send(message)
+class Class2(Class1): 
+    def method1(self): 
+        super().method1()
+        self.method2()
+        print("This is method 1 from class 2")
 
 
-async def main():
-    async with serve( echo, host="", port=PORT):
-        print("Server listenning on port ", PORT)
-        # connect_to_server()
-        await asyncio.get_running_loop().create_future()  # run forever
-
-# asyncio.run(main())
-
+if __name__ == "__main__": 
+    x = Class2()
+    x.method1()

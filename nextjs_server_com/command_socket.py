@@ -17,7 +17,7 @@ class CommandSocket:
     def __init__(self, next_client_socket): 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
-                logger.log("Trying to connect to the server", severity="info")
+                logger.log("[Command Socket] Trying to connect to the server", severity="info")
                 s.connect((HOST, PORT))
                 self.socket = s
                 self.next_client_socket = next_client_socket
@@ -26,17 +26,27 @@ class CommandSocket:
                     "data": "next"
                 })
                 self.wait_for_commands()
-            except: 
-                logger.log("Spectrometer server not available!", severity="error")
+                
+
+            except Exception as err: 
+                logger.log(f"[Command Socket] An error occured {err}", severity="error")
     
     def wait_for_commands(self): 
         while True:
+            print(self.socket)
+            logger.log("[Command Socket] Listenning for commands", severity="info")
             data = self.socket.recv(1024)
-            logger.log("Command received: " + data, severity="info")
+            logger.log("[Command Socket] Command received from the Python Spec Socket server: " + data, severity="info")
             self.next_client_socket.send(data)
     
     def send_command(self, msg): 
+        logger.log("[Command Socket] Sending command to the Python Spec Socket", severity="info")
         self.socket.send(bytes(json.dumps(msg), encoding="utf-8"))
+
+    def disconnect(self): 
+        logger.log("[Command Socket] Closing the command socket connection...", severity="info")
+        self.socket.shutdown()
+        self.socket.close()
 
 if __name__ == "__main__": 
     cmd = CommandSocket()
