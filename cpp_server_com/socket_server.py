@@ -46,6 +46,10 @@ class SpecServerSocket(utils.SocketServer):
 
                 except ConnectionResetError as e: 
                     self.handle_client_disconnection(notified_socket)
+                except Exception as err: 
+                    logger.log(f"[Python Spec Socket] An error occured: {str(err)}", "error")
+
+
                     
             time.sleep(1)
     
@@ -65,16 +69,23 @@ class SpecServerSocket(utils.SocketServer):
     # ------------- Available spectrometer commands -----------------
     def identification(self, data, client_socket, *argv):
         if data == "nir": 
-            logger.log("[Python Spec Socket] Initializing the Spectrometer instance...", "info")
-            self.device_socket = client_socket
-            self.spec = HSSUSB2A(client_socket)
+            self.nir_spec_init(client_socket)
         elif data == "next": 
-            logger.log("[Python Spec Socket] Command Client connected", severity="info")
-            self.command_client_socket = client_socket
+            self.command_socket_init(client_socket)     
         else: 
             raise Exception("Unauthorized connection.")
         self.sockets_list.append(client_socket)
 
+    def nir_spec_init(self, socket): 
+        logger.log("[Python Spec Socket] Initializing the Spectrometer instance...", "info")
+        self.device_socket = socket
+        self.spec = HSSUSB2A(socket)
+
+    def command_socket_init(self, socket): 
+        logger.log("[Python Spec Socket] Command Client connected", severity="info")
+        self.command_client_socket = socket
+        self.experiment_data.register_command_socket(socket=socket)
+            
     
     def device_status(self, _ , status): 
         logger.log("[Python Spec Socket] Updating spec status...", "info")

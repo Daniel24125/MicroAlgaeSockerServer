@@ -22,7 +22,7 @@ class SocketServer():
         if not len(data):  
             self.handle_client_disconnection(client_socket)
             
-        logger.log(f"Command received: {data}", "info")
+        logger.log(f"Command received: {data}")
         try: 
             cmd = json.loads(data)
             self.parse_cmd(cmd, client_socket)

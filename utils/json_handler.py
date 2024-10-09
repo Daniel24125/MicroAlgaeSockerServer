@@ -10,9 +10,13 @@ BACKUP_FILE_PATH = load_env("BACKUP_FILE_PATH")
 class JSON_Handler: 
     updating_experiment = False
     experiment_data = None
+    command_socket = None
 
     def __init__(self):
         self.read_experiment_data()
+
+    def register_command_socket(self, socket):
+        self.command_socket = socket
 
     def retrieve_experiment_data(self): 
         if not bool(self.experiment_data):
@@ -26,6 +30,12 @@ class JSON_Handler:
     def update_experiment_data(self, newData, commit_changes = False):
         self.experiment_data = {**self.experiment_data,**newData}
         if commit_changes: self.commit_experiment_changes()
+        if self.command_socket: self.send_data_via_socket()
+
+    def send_data_via_socket(self): 
+        log("\n[Experimental Data Handler] Sending updated data to the command socket\n", "info")
+        self.command_socket.send(bytes(json.dumps(self.experiment_data),encoding="utf-8"))
+
 
     def commit_experiment_changes(self): 
         if not self.updating_experiment:
@@ -34,10 +44,10 @@ class JSON_Handler:
             self.save_data_to_file(self.experiment_data)
             self.updating_experiment = False
         else: 
-            log("File is currently being updated...", "warning")
+            log("[Experimental Data Handler] File is currently being updated...", "warning")
 
     def backup_experiment_data(self): 
-        log("\nUpdating experiment data...\n", "info")
+        log("\n[Experimental Data Handler] Backing up experiment data...\n", "info")
         data = self.retrieve_data_from_file(FILE_PATH)
         backup_path = self.get_backup_path()
         self.save_data_to_file(data, backup_path)
