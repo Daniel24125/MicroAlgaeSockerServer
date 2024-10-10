@@ -12,6 +12,7 @@ if __name__ == "__main__":
         t1 = threading.Thread(target=spec_server.listen_for_connections)
         t1.start()
 
+        # NextJS Scoket
         start_server()
 
         

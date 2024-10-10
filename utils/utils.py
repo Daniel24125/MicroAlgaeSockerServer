@@ -50,31 +50,29 @@ class SocketServer():
 class SubscriberClass(): 
     __subscriber_list = []
 
-    def __init__(self): 
+    def __init__(self, sio): 
         self.device_data = json_handler.JSON_Handler()
+        self.sio = sio
         
       
-    def add_subscriber_to_list(self, socket): 
+    def add_subscriber_to_list(self, sid): 
         logger.log("[Subscriber] Adding client socket to the subscribers list", severity="info")
-        self.__subscriber_list.append(socket)
+        self.__subscriber_list.append(sid)
         logger.log("[Subscriber] Number of subscribers: " + str(self.get_num_subscribers()), severity="info")
 
 
     def notify_subscribers(self): 
         if len(self.__subscriber_list) > 0: 
             logger.log("[Subscriber] Notifying all the subscribers", severity="info")
-            for sub in self.__subscriber_list: 
-                sub.send(bytes(json.dumps({
-                    "cmd": "device_data_update",
-                    "data": self.device_data.retrieve_data_from_file()
-                }), encoding="utf-8"))
+            for sid in self.__subscriber_list: 
+                self.sio.emit('device_data_update',self.device_data.retrieve_data_from_file(), to=sid)
 
     def get_num_subscribers(self): 
         return len(self.__subscriber_list)
 
-    def unsubscribe(self, socket): 
-        logger.log("[Subscriber] Unsubscribing NextJS client socket...", severity="info")
-        self.__subscriber_list.remove(socket)
+    def unsubscribe(self, sid): 
+        logger.log("[Subscriber] Unsubscribing NextJS client SID...", severity="info")
+        self.__subscriber_list.remove(sid)
 
 
 

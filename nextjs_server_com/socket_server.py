@@ -21,8 +21,8 @@ import eventlet
 
     
 sio = socketio.Server(cors_allowed_origins='*')
-subscriber = utils.SubscriberClass()   
-global command_instance
+subscriber = utils.SubscriberClass(sio)   
+command_instance = None
 
 @sio.event
 def connect(sid, environ, auth):
@@ -31,16 +31,20 @@ def connect(sid, environ, auth):
 @sio.event
 def disconnect(sid):
     logger.log(f"The client with id {sid} has been disconnected")
-    print('disconnect ', sid)
+    handle_client_disconnection(sid)
+    
+    
+
 
 @sio.event
-def cmd(sid, data):
-    commands = {
-        "identification": identification,
-        "notify_subscribers": notify_subscribers
-    }
-    parse_cmd(sid, data, commands)
+def identification(sid, data):
+    logger.log(f"[NextJS Python Socket Server] Parsing the following command: identification", "info")
+    identification(data, sid)
 
+@sio.event
+def notify_subscribers():
+    logger.log(f"[NextJS Python Socket Server] Parsing the following command: notify_subscribers", "info")
+    notify_subscribers()
 
 def start_server():
     app = socketio.WSGIApp(sio)
@@ -48,35 +52,34 @@ def start_server():
     eventlet.wsgi.server(eventlet.listen(('', PORT)), app)
 
 
-def handle_client_disconnection(self): 
-    if subscriber.get_num_subscribers == 0: 
+def handle_client_disconnection(sid): 
+    subscriber.unsubscribe(sid)
+    if subscriber.get_num_subscribers() == 0 and command_instance: 
         command_instance.disconnect()
 
-def parse_cmd(sid, data, commands): 
-    cmd_received = data["data"]
-    logger.log(f"[NextJS Python Socket Server] Parsing the following command: {cmd_received}", "info")
-    if cmd_received in commands: 
-        commands[cmd_received](data)
-    else:
-        logger.log("[NextJS Python Socket Server] Command not recognized", "warning")
 
 # Available commands
 def identification(data, sid, *argv):
+
     if data == "next": 
         logger.log("[NextJS Python Socket Server] NEXJS Client connected!", severity="info")
-        subscriber.add_subscriber_to_list(sid)
         initiate_command_socket()
+        subscriber.add_subscriber_to_list(sid)
         
-def notify_subscribers(self): 
+def notify_subscribers(): 
     subscriber.notify_subscribers()
 
 # Utils
-def initiate_command_socket(self, client_socket): 
-    if subscriber.get_num_subscribers == 0:
+def initiate_command_socket(): 
+    # logger.log("[NextJS Python Socket Server] Num subs: " + str(), severity="default")
+
+    if subscriber.get_num_subscribers() == 0:
+        logger.log("[NextJS Python Socket Server] Establishing connection with Spectrometer Socket Server", severity="default")
         t1 = threading.Thread(target= make_command_socket_connection)
         t1.start()
 
 def make_command_socket_connection(): 
+    global command_instance
     command_instance = CommandSocket(sio)
         
 if __name__ == "__main__": 
