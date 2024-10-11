@@ -1,5 +1,6 @@
 from . import json_handler, logger
 import json 
+from threading import Thread
 
 class SocketServer(): 
     def __init__(self): 
@@ -52,10 +53,11 @@ class SubscriberClass():
 
 
     def notify_subscribers(self): 
+        logger.log("[Subscriber] Subscribers " + str(self.get_num_subscribers()), severity="info")
         if len(self.__subscriber_list) > 0: 
             logger.log("[Subscriber] Notifying all the subscribers", severity="info")
             for sid in self.__subscriber_list: 
-                self.sio.emit('device_data_update',self.device_data.retrieve_data_from_file(), to=sid)
+                self.sio.emit('test',self.device_data.retrieve_data_from_file())
 
     def get_num_subscribers(self): 
         return len(self.__subscriber_list)
@@ -65,6 +67,16 @@ class SubscriberClass():
         self.__subscriber_list.remove(sid)
 
 
+
+class ReturnableThread(Thread):
+    # This class is a subclass of Thread that allows the thread to return a value.
+    def __init__(self, target):
+        Thread.__init__(self)
+        self.target = target
+        self.result = None
+    
+    def run(self) -> None:
+        self.result = self.target()
 
 if __name__ == "__main__": 
     sub = SubscriberClass()

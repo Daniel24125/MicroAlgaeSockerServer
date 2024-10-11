@@ -1,6 +1,5 @@
 import sys
 import os
-import threading
 import socketio
 
 
@@ -46,7 +45,6 @@ def start_server():
     logger.log(f"[NextJS Python Socket Server] Server listenning on port {PORT}", severity="info")
     eventlet.wsgi.server(eventlet.listen(('', PORT)), app)
 
-
 def handle_client_disconnection(sid): 
     subscriber.unsubscribe(sid)
     if subscriber.get_num_subscribers() == 0 and command_instance: 
@@ -58,42 +56,26 @@ def identification(data, sid, *argv):
 
     if data == "next": 
         logger.log("[NextJS Python Socket Server] NEXJS Client connected!", severity="info")
-        initiate_command_socket()
         subscriber.add_subscriber_to_list(sid)
+        initiate_command_socket()
         
 def notify_subscribers(): 
     subscriber.notify_subscribers()
 
 # Utils
 def initiate_command_socket(): 
-    # logger.log("[NextJS Python Socket Server] Num subs: " + str(), severity="default")
-
-    if subscriber.get_num_subscribers() == 0:
+    if subscriber.get_num_subscribers() == 1:
         logger.log("[NextJS Python Socket Server] Establishing connection with Spectrometer Socket Server", severity="default")
-        t1 = threading.Thread(target= make_command_socket_connection)
-        t1.start()
+        make_command_socket_connection()
+      
+def send_client_command(cmd):
+    logger.log("[NextJS Python Socket Server] Sending a command to the client", severity="default")
+    sio.emit("test", "HELLO")
 
 def make_command_socket_connection(): 
     global command_instance
-    command_instance = CommandSocket(sio)
-        
-if __name__ == "__main__": 
-    # server = NextSocketServer()
-    sio = socketio.Server(cors_allowed_origins='*')
-    app = socketio.WSGIApp(sio)
-
-    @sio.event
-    def connect(sid, environ, auth):
-        print('connect ', sid)
-
-    @sio.event
-    def disconnect(sid):
-        print('disconnect ', sid)
-
-
-    eventlet.wsgi.server(eventlet.listen(('', PORT)), app)
-
-
+    command_instance = CommandSocket(subscriber)
+   
 
 
 

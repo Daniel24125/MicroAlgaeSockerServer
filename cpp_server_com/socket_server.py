@@ -87,11 +87,11 @@ class SpecServerSocket(utils.SocketServer):
         self.experiment_data.register_command_socket(socket=socket)
             
     
-    def device_status(self, _ , status): 
+    def device_status(self, data , socket): 
         logger.log("[Python Spec Socket] Updating spec status...", "info")
-        self.spec.device_status(status)
+        self.spec.device_status(socket)
         logger.log("[Python Spec Socket] Retrieving experimental data to NEXJS Server", "warning")
-        self.send_client_commands({"cmd": "notify_subscribers"})
+        self.send_client_commands({"cmd": "notify_subscribers", "data": data})
     
     # ------------- Utils methods -----------------
     def handle_client_disconnection(self, client_socket): 
