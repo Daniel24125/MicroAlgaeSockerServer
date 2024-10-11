@@ -34,9 +34,14 @@ class CommandSocket:
     def wait_for_commands(self): 
         while True:
             logger.log("[Command Socket] Listenning for commands", severity="info")
-            data = self.socket.recv(1024)
-            logger.log("[Command Socket] Command received from the Python Spec Socket server: " + data, severity="info")
-            self.next_client_socket.emit('cmd', data)
+            received_data = self.socket.recv(1024)
+            cmd, data =  self.parse_command(received_data)
+            logger.log("[Command Socket] Command received from the Python Spec Socket server: " + str(received_data), severity="info")
+            
+            self.next_client_socket.emit(cmd, data)
+    
+    def parse_command(self, data):
+        return json.loads(str(data))
     
     def send_command(self, msg): 
         logger.log("[Command Socket] Sending command to the Python Spec Socket", severity="info")

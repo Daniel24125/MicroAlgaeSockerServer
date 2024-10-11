@@ -1,11 +1,6 @@
-import asyncio
-import json
-from websockets.server import serve
-from websockets.exceptions import ConnectionClosed, ConnectionClosedOK
 import sys
 import os
 import threading
-import time
 import socketio
 
 

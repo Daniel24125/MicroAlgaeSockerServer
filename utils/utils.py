@@ -5,25 +5,15 @@ class SocketServer():
     def __init__(self): 
         self.experiment_data = json_handler.JSON_Handler()
         
-
-    def handle_commands(self, data, client_socket): 
-        if not len(data): 
-            self.handle_client_disconnection(client_socket) 
-
-        logger.log(f"Command received: {data}", "info")
-        try: 
-            cmd = json.loads(data)
-            self.parse_cmd(cmd, client_socket)
-        except ValueError as e: 
-            logger.log("Error loading the json file. This probably occurs due to the first connection by the web client" + e,"error")
-
     
     def receive_cmd(self, data, client_socket):        
-        if not len(data):  
-            self.handle_client_disconnection(client_socket)
-            
-        logger.log(f"Command received: {data}")
         try: 
+            if not len(data):  
+                self.handle_client_disconnection(client_socket)
+                raise Exception("No data received")
+                
+            
+            logger.log(f"Command received: {data}")
             cmd = json.loads(data)
             self.parse_cmd(cmd, client_socket)
         except ValueError as e: 

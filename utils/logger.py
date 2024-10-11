@@ -21,7 +21,7 @@ def log(msg, severity = "default"):
     elif severity == "error": 
         color = Fore.RED
 
-    print(color + msg + Fore.RESET)
+    print(color + f"\n{msg}" + Fore.RESET)
         
 
 
