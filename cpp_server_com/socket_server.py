@@ -41,6 +41,7 @@ class SpecServerSocket(utils.SocketServer):
                         logger.log(f"[Python Spec Socket] A client has connected with the following address: {client_address}", "default")
 
                         self.handle_data_reception(client_socket)
+                      
                     else: 
                         self.handle_data_reception(notified_socket)
 
@@ -51,7 +52,7 @@ class SpecServerSocket(utils.SocketServer):
 
 
                     
-            time.sleep(1)
+            # time.sleep(1)
     
     def handle_data_reception(self, client_socket):
         logger.log("[Python Spec Socket] Waiting for Commands...", "default")
@@ -71,6 +72,7 @@ class SpecServerSocket(utils.SocketServer):
         if data == "nir": 
             self.nir_spec_init(client_socket)
         elif data == "next": 
+
             self.command_socket_init(client_socket)     
         else: 
             raise Exception("Unauthorized connection.")
@@ -95,8 +97,8 @@ class SpecServerSocket(utils.SocketServer):
     
     # ------------- Utils methods -----------------
     def handle_client_disconnection(self, client_socket): 
-        super().handle_client_disconnection(client_socket)
-
+        # super().handle_client_disconnection(client_socket)
+        print(client_socket.isAlive)
         if client_socket == self.device_socket: 
             self.reset_socket()
         self.sockets_list.remove(client_socket)

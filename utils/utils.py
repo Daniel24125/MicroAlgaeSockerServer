@@ -9,14 +9,11 @@ class SocketServer():
     
     def receive_cmd(self, data, client_socket):        
         try: 
-            if not len(data):  
-                self.handle_client_disconnection(client_socket)
-                raise Exception("No data received")
+            if len(data) > 0:  
                 
-            
-            logger.log(f"Command received: {data}")
-            cmd = json.loads(data)
-            self.parse_cmd(cmd, client_socket)
+                logger.log(f"Command received: {data}")
+                cmd = json.loads(data)
+                self.parse_cmd(cmd, client_socket)
         except ValueError as e: 
             logger.log("Error loading the json file.","error")
 
@@ -51,13 +48,15 @@ class SubscriberClass():
         self.__subscriber_list.append(sid)
         logger.log("[Subscriber] Number of subscribers: " + str(self.get_num_subscribers()), severity="info")
 
-
-    def notify_subscribers(self): 
+    async def notify_subscribers(self): 
         logger.log("[Subscriber] Subscribers " + str(self.get_num_subscribers()), severity="info")
+
         if len(self.__subscriber_list) > 0: 
+
             logger.log("[Subscriber] Notifying all the subscribers", severity="info")
             for sid in self.__subscriber_list: 
-                self.sio.emit('test',self.device_data.retrieve_data_from_file())
+                print("NOTIFY SUBS", self.sio)
+                await self.sio.emit('test', self.device_data.retrieve_data_from_file())
 
     def get_num_subscribers(self): 
         return len(self.__subscriber_list)

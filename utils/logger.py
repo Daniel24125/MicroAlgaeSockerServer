@@ -1,6 +1,6 @@
 from colorama import Fore
 
-
+DEBUG_MODE = False
 
 def log(msg, severity = "default"): 
     '''
@@ -21,7 +21,8 @@ def log(msg, severity = "default"):
     elif severity == "error": 
         color = Fore.RED
 
-    print(color + f"\n{msg}" + Fore.RESET)
+    if not DEBUG_MODE:
+        print(color + f"\n{msg}" + Fore.RESET)
         
 
 
