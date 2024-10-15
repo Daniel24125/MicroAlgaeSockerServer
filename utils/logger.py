@@ -2,7 +2,7 @@ from colorama import Fore
 
 DEBUG_MODE = False
 
-def log(msg, severity = "default"): 
+def log(msg, context, severity = "default"): 
     '''
         Severity possible values:
             - default: color BLACK; 
@@ -22,7 +22,7 @@ def log(msg, severity = "default"):
         color = Fore.RED
 
     if not DEBUG_MODE:
-        print(color + f"\n{msg}" + Fore.RESET)
+        print(color + f"\n[{context}] {msg}" + Fore.RESET)
         
 
 

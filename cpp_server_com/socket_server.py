@@ -28,7 +28,7 @@ class SpecServerSocket(utils.SocketServer):
         self.sockets_list = [self.server_socket]
         self.server_socket.bind((HOST, port))
         self.server_socket.listen()
-        logger.log(f"[Python Spec Socket] Server listenning on port {port}", "info")
+        logger.log(f"Server listenning on port {port}", context="Python Spec Socket", severity="info")
 
 
     def listen_for_connections(self): 
@@ -38,26 +38,33 @@ class SpecServerSocket(utils.SocketServer):
                 try: 
                     if notified_socket == self.server_socket: 
                         client_socket, client_address = self.server_socket.accept()
-                        logger.log(f"[Python Spec Socket] A client has connected with the following address: {client_address}", "default")
-
+                        logger.log(f"A client has connected with the following address: {client_address}",context="Python Spec Socket",severity="default")
                         self.handle_data_reception(client_socket)
-                      
                     else: 
                         self.handle_data_reception(notified_socket)
 
                 except ConnectionResetError as e: 
                     self.handle_client_disconnection(notified_socket)
                 except Exception as err: 
-                    logger.log(f"[Python Spec Socket] An error occured: {str(err)}", "error")
-
-
-                    
-            # time.sleep(1)
+                    logger.log(f"An error occured: {str(err)}",context="Python Spec Socket",severity="error")   
+            time.sleep(1)
     
     def handle_data_reception(self, client_socket):
-        logger.log("[Python Spec Socket] Waiting for Commands...", "default")
-        data = client_socket.recv(1024) 
-        self.receive_cmd(data, client_socket=client_socket)
+        logger.log("Waiting for Commands", context="Python Spec Socket",severity="default")
+        try: 
+            data = client_socket.recv(1024) 
+        except socket.timeout as e:
+            err = e.args[0]
+            if err != 'timed out':
+                logger.log("Error while receiving data: " + str(e),context="Python Spec Socket", severity="error")
+        except socket.error as e:
+            self.handle_client_disconnection(client_socket)
+        else: 
+            if len(data) == 0: 
+                   self.handle_client_disconnection(client_socket)
+                   
+            else: 
+                self.receive_cmd(data, client_socket=client_socket)
 
     def parse_cmd(self, cmd, client_socket):
         commands = {
@@ -79,26 +86,25 @@ class SpecServerSocket(utils.SocketServer):
         self.sockets_list.append(client_socket)
 
     def nir_spec_init(self, socket): 
-        logger.log("[Python Spec Socket] Initializing the Spectrometer instance...", "info")
+        logger.log("Initializing the Spectrometer instance...",context="Python Spec Socket", severity="info")
         self.device_socket = socket
         self.spec = HSSUSB2A(socket)
 
     def command_socket_init(self, socket): 
-        logger.log("[Python Spec Socket] Command Client connected", severity="info")
+        logger.log("Command Client connected",context="Python Spec Socket", severity="info")
         self.command_client_socket = socket
         self.experiment_data.register_command_socket(socket=socket)
             
     
     def device_status(self, data , socket): 
-        logger.log("[Python Spec Socket] Updating spec status...", "info")
+        logger.log("Updating spec status...",context="Python Spec Socket", severity="info")
         self.spec.device_status(socket)
-        logger.log("[Python Spec Socket] Retrieving experimental data to NEXJS Server", "warning")
+        logger.log("Retrieving experimental data to NEXJS Server",context="Python Spec Socket", severity="warning")
         self.send_client_commands({"cmd": "notify_subscribers", "data": data})
     
     # ------------- Utils methods -----------------
     def handle_client_disconnection(self, client_socket): 
-        # super().handle_client_disconnection(client_socket)
-        print(client_socket.isAlive)
+        super().handle_client_disconnection(client_socket)
         if client_socket == self.device_socket: 
             self.reset_socket()
         self.sockets_list.remove(client_socket)
@@ -112,9 +118,10 @@ class SpecServerSocket(utils.SocketServer):
 
     def send_client_commands(self, msg): 
         if hasattr(self, "command_client_socket"):
+            
             self.command_client_socket.send(bytes(json.dumps(msg),encoding="utf-8"))
         else:
-            logger.log("[Python Spec Socket] Nextjs client not available!", "info")
+            logger.log("Nextjs client not available!", context="Python Spec Socket", severity="info")
     
     def send_spectrometer_command(self, msg): 
         if hasattr(self, "device_socket"):

@@ -11,11 +11,11 @@ class SocketServer():
         try: 
             if len(data) > 0:  
                 
-                logger.log(f"Command received: {data}")
+                logger.log(f"Command received: {data}", context="Socket Server Parent Class")
                 cmd = json.loads(data)
                 self.parse_cmd(cmd, client_socket)
         except ValueError as e: 
-            logger.log("Error loading the json file.","error")
+            logger.log("Error loading the json file.",context="Socket Server Parent Class",severity="error")
 
 
     def parse_cmd(self, cmd, client_socket, commands):        
@@ -23,15 +23,15 @@ class SocketServer():
             raise Exception("Invalid JSON received")
         
         cmd_received, data = (cmd["cmd"], cmd["data"])
-        logger.log(f"Parsing the following command: {cmd_received}", "info")
+        logger.log(f"Parsing the following command: {cmd_received}",context="Socket Server Parent Class", severity="info")
 
         if cmd_received in commands: 
             commands[cmd_received](data, client_socket)
         else:
-            logger.log("Command not recognized", "warning")
+            logger.log("Command not recognized", context="Socket Server Parent Class", severity="warning")
            
     def handle_client_disconnection(self, client_socket): 
-        logger.log("The client has been disconnected")
+        logger.log("The client has been disconnected",context="Socket Server Parent Class")
 
 
 
@@ -44,16 +44,16 @@ class SubscriberClass():
         
       
     def add_subscriber_to_list(self, sid): 
-        logger.log("[Subscriber] Adding client socket to the subscribers list", severity="info")
+        logger.log("Adding client socket to the subscribers list", context="Subscriber", severity="info")
         self.__subscriber_list.append(sid)
-        logger.log("[Subscriber] Number of subscribers: " + str(self.get_num_subscribers()), severity="info")
+        logger.log("Number of subscribers: " + str(self.get_num_subscribers()), context="Subscriber", severity="info")
 
     async def notify_subscribers(self): 
-        logger.log("[Subscriber] Subscribers " + str(self.get_num_subscribers()), severity="info")
+        logger.log("Subscribers " + str(self.get_num_subscribers()), context="Subscriber", severity="info")
 
         if len(self.__subscriber_list) > 0: 
 
-            logger.log("[Subscriber] Notifying all the subscribers", severity="info")
+            logger.log("Notifying all the subscribers", context="Subscriber", severity="info")
             for sid in self.__subscriber_list: 
                 print("NOTIFY SUBS", self.sio)
                 await self.sio.emit('test', self.device_data.retrieve_data_from_file())
@@ -62,20 +62,10 @@ class SubscriberClass():
         return len(self.__subscriber_list)
 
     def unsubscribe(self, sid): 
-        logger.log("[Subscriber] Unsubscribing NextJS client SID...", severity="info")
+        logger.log("Unsubscribing NextJS client SID...", context="Subscriber", severity="info")
         self.__subscriber_list.remove(sid)
 
 
-
-class ReturnableThread(Thread):
-    # This class is a subclass of Thread that allows the thread to return a value.
-    def __init__(self, target):
-        Thread.__init__(self)
-        self.target = target
-        self.result = None
-    
-    def run(self) -> None:
-        self.result = self.target()
 
 if __name__ == "__main__": 
     sub = SubscriberClass()
