@@ -3,8 +3,6 @@ from utils.json_handler import JSON_Handler
 from utils.logger import log
 class HSSUSB2A: 
     socket = None
-
-
     def __init__(self, device_socket): 
         self.device_socket = device_socket
         self.experiment_data = JSON_Handler()
@@ -20,7 +18,7 @@ class HSSUSB2A:
         
 
     def device_status(self, data, *argv):
-        log("NIR Status received", "info")
+        log("NIR Status received", context="HSSUSB2A",severity="info")
         deviceState =  True if data == "True" else False
         self.experiment_data.update_experiment_data({
             "isDeviceConnected": deviceState

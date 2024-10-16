@@ -77,7 +77,6 @@ class SpecServerSocket(utils.SocketServer):
         if data == "nir": 
             self.nir_spec_init(client_socket)
         elif data == "next": 
-
             self.command_socket_init(client_socket)     
         else: 
             raise Exception("Unauthorized connection.")
@@ -96,8 +95,9 @@ class SpecServerSocket(utils.SocketServer):
     def device_status(self, data , socket): 
         logger.log("Updating spec status...",context="Python Spec Socket", severity="info")
         self.spec.device_status(socket)
-        logger.log("Retrieving experimental data to NEXJS Server",context="Python Spec Socket", severity="warning")
-        self.send_client_commands({"cmd": "notify_subscribers", "data": data})
+        self.send_client_commands({
+            "cmd": "notify_subscribers"
+        })
     
     # ------------- Utils methods -----------------
     def handle_client_disconnection(self, client_socket): 
@@ -115,10 +115,9 @@ class SpecServerSocket(utils.SocketServer):
 
     def send_client_commands(self, msg): 
         if hasattr(self, "command_client_socket"):
-            
             self.command_client_socket.send(bytes(json.dumps(msg),encoding="utf-8"))
         else:
-            logger.log("Nextjs client not available!", context="Python Spec Socket", severity="info")
+            logger.log("Command socket client not available!", context="Python Spec Socket", severity="info")
     
     def send_spectrometer_command(self, msg): 
         if hasattr(self, "device_socket"):

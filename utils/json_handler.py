@@ -34,10 +34,7 @@ class JSON_Handler:
 
     def send_data_via_socket(self): 
         log("\n[Experimental Data Handler] Sending updated data to the command socket\n", "info")
-        self.command_socket.send(bytes(json.dumps({
-            "cmd": "status_update", 
-            "data": self.experiment_data
-        }),encoding="utf-8"))
+        self.command_socket.send(bytes(json.dumps({"cmd": "notify_subscribers"}),encoding="utf-8"))
 
 
     def commit_experiment_changes(self): 

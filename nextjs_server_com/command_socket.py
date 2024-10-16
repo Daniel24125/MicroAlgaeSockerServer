@@ -47,7 +47,6 @@ class CommandSocket:
         while True:
             try:
                 received_data = self.socket.recv(1024)
-                print("AFTER socket.recv")
             except socket.timeout as e:
                 err = e.args[0]
                 if err == 'timed out':
@@ -61,11 +60,32 @@ class CommandSocket:
                 if len(received_data) == 0: 
                     self.handle_disconnection()
                 else: 
-                    cmd, data =  self.extract_command(received_data)
-                    logger.log("Command received from the Python Spec Socket server: " + str(cmd),context="Command Socket", severity="info")
-                    logger.log("Data: " + str(data),context="Command Socket", severity="info")
+                    await self.parse_cmd(received_data=received_data)
                     if self.notify:
                         await self.notify()
+
+    async def parse_cmd(self, received_data): 
+        commands = {
+            "notify_subscribers": self.notify_subscribers
+        }
+        try: 
+            cmd, data =  self.extract_command(received_data)
+            logger.log("Command received from the Python Spec Socket server: " + str(cmd),context="Command Socket", severity="info")
+            if cmd in commands: 
+                await commands[cmd]()
+            else: 
+                raise Exception("Command not found")
+        
+        except Exception as err:
+            logger.log("An error occured while trying to parse the data received: " + str(err),context="Command Socket", severity="error")
+             
+
+
+    async def notify_subscribers(self, *argv): 
+        if self.notify: 
+            await self.notify()
+
+    ############## UTILS
 
     def handle_disconnection(self): 
         logger.log("Disconnected from the spec server",context="Command Socket", severity="warning")
@@ -74,7 +94,9 @@ class CommandSocket:
     def extract_command(self, data):
         logger.log("Parsing the command " + str(data),context="Command Socket", severity="info")
         loaded_data = json.loads(str(data.decode("utf-8")))
-        return (loaded_data["cmd"], loaded_data["data"] if bool(loaded_data["data"]) else "")
+        if not "cmd" in loaded_data: 
+            raise Exception("Invalid JSON received")
+        return (loaded_data["cmd"], loaded_data["data"] if hasattr(loaded_data, "data") else "")
     
     def send_command_to_spec_server(self, msg): 
         logger.log("Sending command to the Python Spec Socket",context="Command Socket", severity="info")
