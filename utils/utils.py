@@ -42,21 +42,19 @@ class SubscriberClass():
         self.device_data = json_handler.JSON_Handler()
         self.sio = sio
         
-      
     def add_subscriber_to_list(self, sid): 
         logger.log("Adding client socket to the subscribers list", context="Subscriber", severity="info")
         self.__subscriber_list.append(sid)
         logger.log("Number of subscribers: " + str(self.get_num_subscribers()), context="Subscriber", severity="info")
 
+    async def notify_user(self, sid): 
+        await self.sio.emit('device_update', self.device_data.retrieve_data_from_file(), to=sid)
+
     async def notify_subscribers(self): 
-        logger.log("Subscribers " + str(self.get_num_subscribers()), context="Subscriber", severity="info")
-
         if len(self.__subscriber_list) > 0: 
-
             logger.log("Notifying all the subscribers", context="Subscriber", severity="info")
             for sid in self.__subscriber_list: 
-                await self.sio.emit('test', self.device_data.retrieve_data_from_file(), to=sid)
-                print("Message Sent")
+                await self.notify_user(sid)
 
     def get_num_subscribers(self): 
         return len(self.__subscriber_list)
