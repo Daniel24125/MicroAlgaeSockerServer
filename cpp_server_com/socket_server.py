@@ -30,7 +30,6 @@ class SpecServerSocket(utils.SocketServer):
         self.server_socket.listen()
         logger.log(f"Server listenning on port {port}", context="Python Spec Socket", severity="info")
 
-
     def listen_for_connections(self): 
         while True: 
             read_socket, _ , exception_sockets = select.select(self.sockets_list, [], self.sockets_list)
@@ -73,7 +72,6 @@ class SpecServerSocket(utils.SocketServer):
         }
         super().parse_cmd(cmd, client_socket, commands)
 
-
     # ------------- Available spectrometer commands -----------------
     def identification(self, data, client_socket, *argv):
         if data == "nir": 
@@ -95,7 +93,6 @@ class SpecServerSocket(utils.SocketServer):
         self.command_client_socket = socket
         self.experiment_data.register_command_socket(socket=socket)
             
-    
     def device_status(self, data , socket): 
         logger.log("Updating spec status...",context="Python Spec Socket", severity="info")
         self.spec.device_status(socket)

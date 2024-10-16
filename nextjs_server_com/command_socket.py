@@ -3,14 +3,14 @@ import sys
 import os
 import socket
 import json
-import asyncio
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from utils import env_handler, logger
 HOST = env_handler.load_env("CPP_HOST")
 PORT = int(env_handler.load_env("CPP_PORT"))
-import time
+
 class CommandSocket: 
     notify = None
     
@@ -28,7 +28,6 @@ class CommandSocket:
     async def init_notifier(self, notifier): 
         self.notify = notifier
      
-
     def connect_to_spec_socket(self): 
         try: 
             logger.log("Trying to connect to the server on port " + str(PORT),context="Command Socket", severity="info")
@@ -59,7 +58,6 @@ class CommandSocket:
             except socket.error as e:
                 logger.log("A socket error occured: " + str(e),context="Command Socket", severity="error")
             else: 
-                print("AFTER socket.recv")
                 if len(received_data) == 0: 
                     self.handle_disconnection()
                 else: 

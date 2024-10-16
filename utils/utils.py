@@ -15,7 +15,7 @@ class SocketServer():
                 cmd = json.loads(data)
                 self.parse_cmd(cmd, client_socket)
         except ValueError as e: 
-            logger.log("Error loading the json file.",context="Socket Server Parent Class",severity="error")
+            logger.log("Error loading the json file: " + str(e),context="Socket Server Parent Class",severity="error")
 
 
     def parse_cmd(self, cmd, client_socket, commands):        
@@ -55,8 +55,8 @@ class SubscriberClass():
 
             logger.log("Notifying all the subscribers", context="Subscriber", severity="info")
             for sid in self.__subscriber_list: 
-                print("NOTIFY SUBS", self.sio)
-                await self.sio.emit('test', self.device_data.retrieve_data_from_file())
+                await self.sio.emit('test', self.device_data.retrieve_data_from_file(), to=sid)
+                print("Message Sent")
 
     def get_num_subscribers(self): 
         return len(self.__subscriber_list)

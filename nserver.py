@@ -10,6 +10,7 @@ if __name__ == "__main__":
         command_instance = CommandSocket()
         t = Thread(target=start_server, args=(command_instance,))
         t.start()
+        
         t1 = Thread(target=asyncio.run, args=(command_instance.wait_for_commands(),))
         t1.start()
         t.join()        
