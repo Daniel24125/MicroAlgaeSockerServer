@@ -12,10 +12,10 @@ HOST = env_handler.load_env("CPP_HOST")
 PORT = int(env_handler.load_env("CPP_PORT"))
 
 class CommandSocket: 
-    notify = None
     
     def __init__(self): 
         try:
+            self.notify = None
             self.connect_to_spec_socket()
             self.send_command_to_spec_server({
                 "cmd": "identification",

@@ -36,9 +36,8 @@ class SocketServer():
 
 
 class SubscriberClass(): 
-    __subscriber_list = []
-
     def __init__(self, sio): 
+        self.__subscriber_list = []
         self.device_data = json_handler.JSON_Handler()
         self.sio = sio
         
