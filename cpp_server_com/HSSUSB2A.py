@@ -1,5 +1,5 @@
 import json
-from utils.json_handler import JSON_Handler
+from utils.experiment_handler import JSON_Handler
 from utils.logger import log
 class HSSUSB2A: 
     socket = None

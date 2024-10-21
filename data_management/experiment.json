@@ -1,1 +1,5 @@
-{"_id": "", "isDeviceConnected": false, "experimentDuration": 0, "userID": "", "projectID": "", "sampleName": "", "createdAt": "", "events": [], "regionName": "R1", "nirSpecSettings": {"integrationTime": 20000, "gain": 0}, "data": {"dissolvedCO2": [], "dissolvedO2": [], "glucose": [], "od": [], "cellIdentification": [{"cellName": "", "cellCount": [], "avgSize": []}], "temperature": [], "ph": [], "lightIntensity": [], "urea": [], "ortofosfate": [], "totalCellCount": []}}
+{
+    "isDeviceConnected": false,
+    "createdAt": "",
+    "updatedAt": ""
+}

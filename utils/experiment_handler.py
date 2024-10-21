@@ -1,23 +1,48 @@
-import json 
+import json
+
+import pymongo.errors 
 from .env_handler import load_env
 import datetime 
 import os 
 from .logger import log
+import pymongo
+
 
 FILE_PATH = load_env("FILE_PATH")
 BACKUP_FILE_PATH = load_env("BACKUP_FILE_PATH")
+MONGODB_URI = load_env("MONGODB_URI")
 
-class JSON_Handler: 
+class Experiment_Handler: 
     updating_experiment = False
-    experiment_data = None
-    command_socket = None
-
+    
     def __init__(self):
+        self.experiment_data = None
+        self.command_socket = None
+        self.init_db()
         self.read_experiment_data()
 
-    def register_command_socket(self, socket):
-        self.command_socket = socket
+    def init_db(self):
+        try:
+            log("Initiating DB","Experimental Data Handler", "warning")
+            client = pymongo.MongoClient(MONGODB_URI)
+            self.db = client["experimental_data"]
+            self.exp_data_col = self.db["experiment"]
+        except pymongo.errors.ConnectionFailure as err: 
+            log("An error occured while connecting to the db: " + str(err), "Experimental Data Handler", "error")
 
+    def save_to_db(self):
+        try:
+            self.exp_data_col.insert_one(self.experiment_data)
+        except pymongo.errors.DuplicateKeyError as err:
+            log("The record already exists: " + str(err), "Experimental Data Handler", "error")
+            
+    def get_exp_data(self): 
+        data = self.exp_data_col.find()
+        print(len(data.to_list()))
+        for exp in data: 
+            print(exp)
+    
+    
     def retrieve_experiment_data(self): 
         if not bool(self.experiment_data):
             self.read_experiment_data()
@@ -33,21 +58,20 @@ class JSON_Handler:
         if self.command_socket: self.send_data_via_socket()
 
     def send_data_via_socket(self): 
-        log("\n[Experimental Data Handler] Sending updated data to the command socket\n", "info")
-        self.command_socket.send(bytes(json.dumps({"cmd": "notify_subscribers"}),encoding="utf-8"))
+        log("Sending updated data to the command socket\n","Experimental Data Handler", "info")
+        if hasattr(self, "command_socket"):
+            self.command_socket.send(bytes(json.dumps({"cmd": "notify_subscribers"}),encoding="utf-8"))
 
 
     def commit_experiment_changes(self): 
         if not self.updating_experiment:
-            self.backup_experiment_data()
-            self.updating_experiment = True
+            # self.backup_experiment_data()
             self.save_data_to_file(self.experiment_data)
-            self.updating_experiment = False
         else: 
-            log("[Experimental Data Handler] File is currently being updated...", "warning")
+            log("File is currently being updated...","Experimental Data Handler", "warning")
 
     def backup_experiment_data(self): 
-        log("\n[Experimental Data Handler] Backing up experiment data...\n", "info")
+        log("\nBacking up experiment data...\n","Experimental Data Handler", "info")
         data = self.retrieve_data_from_file(FILE_PATH)
         backup_path = self.get_backup_path()
         self.save_data_to_file(data, backup_path)
@@ -67,14 +91,18 @@ class JSON_Handler:
             return data
 
     def save_data_to_file(self, data, path_to_file = FILE_PATH):
+        self.updating_experiment = True
         with open(path_to_file, "w") as f:
+
             json_object = json.dumps(data)
             f.write(json_object)
             f.close()
+        self.updating_experiment = False
 
-if __name__ == "__main__": 
-    try: 
-        file_handler = JSON_Handler()
-       
-    except FileNotFoundError as err: 
-        log("Error", "error")
+    #COMMAND SOCKET    
+
+    def register_command_socket(self, socket):
+        self.command_socket = socket
+
+    def unregister_command_socket(self):
+        self.command_socket = None

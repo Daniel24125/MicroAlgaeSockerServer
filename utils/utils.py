@@ -1,17 +1,35 @@
-from . import json_handler, logger
+from . import experiment_handler, logger
 import json 
-from threading import Thread
+import threading
+
+class SetInterval: 
+    def __init__(self, func, sec, func_args=None): 
+        self.func = func
+        self.sec = sec
+    
+    def func_wrapper(self):
+        self.start()
+        self.func()
+    
+    def start(self): 
+        self.t = threading.Timer(self.sec, self.func_wrapper)
+        self.t.start() 
+
+    def stop(self): 
+        self.t.cancel()
+
+
+
+
 
 class SocketServer(): 
     def __init__(self): 
-        self.experiment_data = json_handler.JSON_Handler()
+        self.experiment_manager = experiment_handler.Experiment_Handler()
         
     
     def receive_cmd(self, data, client_socket):        
         try: 
-            if len(data) > 0:  
-                
-                logger.log(f"Command received: {data}", context="Socket Server Parent Class")
+            if len(data) > 0:                  
                 cmd = json.loads(data)
                 self.parse_cmd(cmd, client_socket)
         except ValueError as e: 
@@ -38,7 +56,7 @@ class SocketServer():
 class SubscriberClass(): 
     def __init__(self, sio): 
         self.__subscriber_list = []
-        self.device_data = json_handler.JSON_Handler()
+        self.device_data = experiment_handler.Experiment_Handler()
         self.sio = sio
         
     def add_subscriber_to_list(self, sid): 
@@ -61,6 +79,7 @@ class SubscriberClass():
     def unsubscribe(self, sid): 
         logger.log("Unsubscribing NextJS client SID...", context="Subscriber", severity="info")
         self.__subscriber_list.remove(sid)
+        
 
 
 

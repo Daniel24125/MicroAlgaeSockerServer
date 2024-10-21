@@ -1,22 +1,13 @@
-class TestClass: 
-    
-    def __init__(self):
-        self.test = []
+from utils.utils import SetInterval
 
-    def add_number(self, num): 
-        self.test.append(num)
 
-    def get_test(self): 
-        return self.test
 
 if __name__ == "__main__": 
-    # TestClass.add_number(TestClass,10)
-    # TestClass.add_number(TestClass,2)
-    # TestClass.add_number(TestClass,4)
-    # TestClass.add_number(TestClass,2)
-    # print(TestClass.test)
-    x = TestClass()
-    print(x.test)
-    y = TestClass()
-    y.add_number(1000)
-    print(x.get_test(), y.get_test())
+    t = SetInterval(lambda: print("HELLO"), 1)
+    t.start()
+    import time 
+    time.sleep(5)
+    t.stop()
+    time.sleep(2)
+    t.start()
+

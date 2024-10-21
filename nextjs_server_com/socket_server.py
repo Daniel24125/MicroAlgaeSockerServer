@@ -51,6 +51,7 @@ def start_server(command_inst):
 
 def handle_client_disconnection(sid): 
     subscriber.unsubscribe(sid)
+  
 
 
 

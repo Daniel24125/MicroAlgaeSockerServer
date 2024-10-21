@@ -1,24 +1,25 @@
 
 import sys
 import os
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(SCRIPT_DIR))
-
-from cpp_server_com.HSSUSB2A import HSSUSB2A
 import json
 import time
 import socket
 import select
-from utils import env_handler, logger, utils
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from utils import env_handler, logger, utils
+from Experiment import Experiment
+from utils.experiment_handler import Experiment_Handler
 
 HOST = env_handler.load_env("CPP_HOST") 
 PORT = int(env_handler.load_env("CPP_PORT"))
 
 class SpecServerSocket(utils.SocketServer): 
     device_socket = None
-    
+    simulation_mode = True
+
     def __init__(self, port=PORT): 
         super().__init__()
         self.init_socket(port)
@@ -28,6 +29,9 @@ class SpecServerSocket(utils.SocketServer):
         self.sockets_list = [self.server_socket]
         self.server_socket.bind((HOST, port))
         self.server_socket.listen()
+        # self.spec = HSSUSB2A_Simulator()
+        self.data_handler = Experiment_Handler()
+        self.experiment_manager = Experiment(self.data_handler)
         logger.log(f"Server listenning on port {port}", context="Python Spec Socket", severity="info")
 
     def listen_for_connections(self): 
@@ -85,16 +89,18 @@ class SpecServerSocket(utils.SocketServer):
     def nir_spec_init(self, socket): 
         logger.log("Initializing the Spectrometer instance...",context="Python Spec Socket", severity="info")
         self.device_socket = socket
-        self.spec = HSSUSB2A(socket)
+        # self.spec = HSSUSB2A(socket)
+        self.simulation_mode = False
 
     def command_socket_init(self, socket): 
         logger.log("Command Client connected",context="Python Spec Socket", severity="info")
         self.command_client_socket = socket
-        self.experiment_data.register_command_socket(socket=socket)
+        self.data_handler.register_command_socket(socket=socket)
+
             
-    def device_status(self, data , socket): 
+    def device_status(self, data, socket): 
         logger.log("Updating spec status...",context="Python Spec Socket", severity="info")
-        self.spec.device_status(socket)
+        # self.spec.device_status(socket)
         self.send_client_commands({
             "cmd": "notify_subscribers"
         })
@@ -109,7 +115,8 @@ class SpecServerSocket(utils.SocketServer):
     def reset_socket(self):
         self.device_socket = None
         self.spec.set_device_socket(None)
-        self.experiment_data.update_experiment_data({
+        self.simulation_mode = True
+        self.data_handler.update_data_handler({
             "isDeviceConnected": False
         }, True)
 
@@ -123,9 +130,6 @@ class SpecServerSocket(utils.SocketServer):
         if hasattr(self, "device_socket"):
             self.device_socket.send(bytes(json.dumps(msg),encoding="utf-8"))
 
-if __name__ == "__main__": 
-    server = SpecServerSocket()
-    server.listen_for_connections()
 
 
 
