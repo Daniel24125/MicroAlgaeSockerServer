@@ -1,7 +1,7 @@
 import json
 from utils.experiment_handler import Experiment_Handler
 from utils.logger import log
-from .Experiment import Experiment
+from . import experiment
 
 
 class HSSUSB2A_Simulator: 
@@ -11,8 +11,7 @@ class HSSUSB2A_Simulator:
     }
 
     def __init__(self): 
-        self.exp_instance = Experiment()
-
+        pass
     
     def get_spectrometer_settings(self, data, *argv): 
         log("Function called: get_spectrometer_settings", "HSSUSBA21_Simulator", "info")

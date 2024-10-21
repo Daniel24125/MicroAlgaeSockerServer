@@ -18,7 +18,7 @@ class Experiment_Handler:
     def __init__(self):
         self.experiment_data = None
         self.command_socket = None
-        self.init_db()
+        # self.init_db()
         self.read_experiment_data()
 
     def init_db(self):

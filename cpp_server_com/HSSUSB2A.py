@@ -1,11 +1,11 @@
 import json
-from utils.experiment_handler import JSON_Handler
+from utils.experiment_handler import Experiment_Handler
 from utils.logger import log
 class HSSUSB2A: 
     socket = None
     def __init__(self, device_socket): 
         self.device_socket = device_socket
-        self.experiment_data = JSON_Handler()
+        self.experiment_data = Experiment_Handler()
 
 
     def set_device_socket(self, device_socket): 

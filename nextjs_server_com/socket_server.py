@@ -37,6 +37,21 @@ async def identification(sid, data):
     logger.log(f"Parsing the following command: identification",context="NextJS Python Socket Server", severity="info")
     asyncio.create_task(identification(data, sid))
 
+@sio.event
+async def start_experiment(sid, data):
+    logger.log(f"Parsing the following command: start_experiment",context="NextJS Python Socket Server", severity="info")
+    command_instance.send_command_to_spec_server({
+        "cmd": "start_experiment", 
+        "data": "hello"
+    })
+
+@sio.event
+async def stop_experiment(sid, data):
+    logger.log(f"Parsing the following command: identification",context="NextJS Python Socket Server", severity="info")
+    command_instance.send_command_to_spec_server({
+        "cmd": "stop_experiment", 
+        "data": "hello"
+    })
 
 @sio.event
 def test(sid, data):

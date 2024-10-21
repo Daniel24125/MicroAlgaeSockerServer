@@ -10,7 +10,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from utils import env_handler, logger, utils
-from Experiment import Experiment
+from . import experiment
 from utils.experiment_handler import Experiment_Handler
 
 HOST = env_handler.load_env("CPP_HOST") 
@@ -31,7 +31,7 @@ class SpecServerSocket(utils.SocketServer):
         self.server_socket.listen()
         # self.spec = HSSUSB2A_Simulator()
         self.data_handler = Experiment_Handler()
-        self.experiment_manager = Experiment(self.data_handler)
+        self.experiment_manager = experiment.Experiment(self.data_handler)
         logger.log(f"Server listenning on port {port}", context="Python Spec Socket", severity="info")
 
     def listen_for_connections(self): 
@@ -72,7 +72,9 @@ class SpecServerSocket(utils.SocketServer):
     def parse_cmd(self, cmd, client_socket):
         commands = {
             "identification": self.identification,
-            "device_status": self.device_status
+            "device_status": self.device_status, 
+            "start_experiment": self.start_experiment, 
+            "stop_experiment": self.stop_experiment
         }
         super().parse_cmd(cmd, client_socket, commands)
 
@@ -96,15 +98,22 @@ class SpecServerSocket(utils.SocketServer):
         logger.log("Command Client connected",context="Python Spec Socket", severity="info")
         self.command_client_socket = socket
         self.data_handler.register_command_socket(socket=socket)
-
-            
+    
     def device_status(self, data, socket): 
         logger.log("Updating spec status...",context="Python Spec Socket", severity="info")
         # self.spec.device_status(socket)
         self.send_client_commands({
             "cmd": "notify_subscribers"
         })
-    
+
+    def start_experiment(self, data, socket): 
+        logger.log("Starting experiment...",context="Python Spec Socket", severity="info")
+        self.experiment_manager.start_experiment()
+
+    def stop_experiment(self, data, socket): 
+        logger.log("Starting experiment...",context="Python Spec Socket", severity="info")
+        self.experiment_manager.stop_experiment()
+         
     # ------------- Utils methods -----------------
     def handle_client_disconnection(self, client_socket): 
         super().handle_client_disconnection(client_socket)
