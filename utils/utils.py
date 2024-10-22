@@ -1,4 +1,4 @@
-from . import experiment_handler, logger
+from . import data_handler, logger
 import json 
 import threading
 
@@ -24,7 +24,7 @@ class SetInterval:
 
 class SocketServer(): 
     def __init__(self): 
-        self.experiment_manager = experiment_handler.Experiment_Handler()
+        self.experiment_manager = data_handler.Data_Handler()
         
     
     def receive_cmd(self, data, client_socket):        
@@ -56,7 +56,7 @@ class SocketServer():
 class SubscriberClass(): 
     def __init__(self, sio): 
         self.__subscriber_list = []
-        self.device_data = experiment_handler.Experiment_Handler()
+        self.device_data = data_handler.Data_Handler()
         self.sio = sio
         
     def add_subscriber_to_list(self, sid): 

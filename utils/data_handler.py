@@ -1,5 +1,4 @@
 import json
-
 import pymongo.errors 
 from .env_handler import load_env
 import datetime 
@@ -12,7 +11,7 @@ FILE_PATH = load_env("FILE_PATH")
 BACKUP_FILE_PATH = load_env("BACKUP_FILE_PATH")
 MONGODB_URI = load_env("MONGODB_URI")
 
-class Experiment_Handler: 
+class Data_Handler: 
     updating_experiment = False
     
     def __init__(self):
@@ -21,6 +20,7 @@ class Experiment_Handler:
         # self.init_db()
         self.read_experiment_data()
 
+    ################ MONGO DB METHODS
     def init_db(self):
         try:
             log("Initiating DB","Experimental Data Handler", "warning")
@@ -38,7 +38,6 @@ class Experiment_Handler:
             
     def get_exp_data(self): 
         data = self.exp_data_col.find()
-        print(len(data.to_list()))
         for exp in data: 
             print(exp)
     

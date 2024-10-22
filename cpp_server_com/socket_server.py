@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from utils import env_handler, logger, utils
 from . import experiment
-from utils.experiment_handler import Experiment_Handler
+from utils.data_handler import Data_Handler
 
 HOST = env_handler.load_env("CPP_HOST") 
 PORT = int(env_handler.load_env("CPP_PORT"))
@@ -29,9 +29,8 @@ class SpecServerSocket(utils.SocketServer):
         self.sockets_list = [self.server_socket]
         self.server_socket.bind((HOST, port))
         self.server_socket.listen()
-        # self.spec = HSSUSB2A_Simulator()
-        self.data_handler = Experiment_Handler()
-        self.experiment_manager = experiment.Experiment(self.data_handler)
+        self.data_handler = Data_Handler()
+        self.experiment_manager = experiment.Experiment()
         logger.log(f"Server listenning on port {port}", context="Python Spec Socket", severity="info")
 
     def listen_for_connections(self): 
@@ -97,7 +96,6 @@ class SpecServerSocket(utils.SocketServer):
     def command_socket_init(self, socket): 
         logger.log("Command Client connected",context="Python Spec Socket", severity="info")
         self.command_client_socket = socket
-        self.data_handler.register_command_socket(socket=socket)
     
     def device_status(self, data, socket): 
         logger.log("Updating spec status...",context="Python Spec Socket", severity="info")
@@ -125,9 +123,7 @@ class SpecServerSocket(utils.SocketServer):
         self.device_socket = None
         self.spec.set_device_socket(None)
         self.simulation_mode = True
-        self.data_handler.update_data_handler({
-            "isDeviceConnected": False
-        }, True)
+      
 
     def send_client_commands(self, msg): 
         if hasattr(self, "command_client_socket"):
