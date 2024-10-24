@@ -1,7 +1,5 @@
-import json
 from utils.data_handler import Data_Handler
 from utils.logger import log
-from . import experiment
 import random
 
 
@@ -46,7 +44,7 @@ class HSSUSB2A_Simulator:
         self.data_handler.register_command_socket(command_socket)    
 
     def update_param(self, param, value): 
-        if hasattr(self.EXPERIMENT_DATA, param): 
+        if param in self.EXPERIMENT_DATA: 
             self.EXPERIMENT_DATA[param].append(value)
 
     def get_spectrometer_settings(self, data, *argv): 
@@ -56,10 +54,6 @@ class HSSUSB2A_Simulator:
     def get_random_value(self, min, max): 
         return min + random.random()*(max-min)
     
-    def register_command_socket(self, command_socket):
-        self.command_socket = command_socket
-        self.exp_instance.register_command_socket()
-
     def set_exposure_time(self, data, *argv): 
         log("Function called: set_exposure_time", "HSSUSBA21_Simulator", "info")
         self.set_config("integrationTime", data)

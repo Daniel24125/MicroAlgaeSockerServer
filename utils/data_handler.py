@@ -51,7 +51,7 @@ class Data_Handler:
         data = self.retrieve_data_from_file(path_to_file)
         self.experiment_data = data
 
-    def update_experiment_data(self, newData, commit_changes = False):
+    def update_experiment_data(self, newData, commit_changes = True):
         self.experiment_data = {**self.experiment_data,**newData}
         if commit_changes: self.commit_experiment_changes()
         if self.command_socket: self.send_data_via_socket()

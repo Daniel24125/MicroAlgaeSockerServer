@@ -76,7 +76,8 @@ async def identification(data, sid, *argv):
         logger.log("NEXJS Client connected!",context="NextJS Python Socket Server", severity="info")
         subscriber.add_subscriber_to_list(sid)
         await subscriber.notify_user(sid)
-        await command_instance.init_notifier(subscriber.notify_subscribers)
+        if subscriber.get_num_subscribers() == 1:
+            command_instance.init_notifier(subscriber.notify_subscribers)
 
 # Utils
 

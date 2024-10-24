@@ -13,7 +13,7 @@ class Experiment:
         self.device = HSSUSB2A(device_socket)
 
     def register_command_socket(self, command_socket): 
-        self.device.register_command_socket(command_socket=command_socket)
+        self.device.register_command_socket(command_socket)
 
     def set_state(self, state): 
         self.EXPERIMENT_STATE = state
@@ -36,4 +36,3 @@ class Experiment:
         
     
 
-    

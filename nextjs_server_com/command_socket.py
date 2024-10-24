@@ -25,7 +25,7 @@ class CommandSocket:
         except Exception as err: 
             logger.log(f"An error occured {err}", context="Command Socket", severity="error")
 
-    async def init_notifier(self, notifier): 
+    def init_notifier(self, notifier): 
         self.notify = notifier
      
     def connect_to_spec_socket(self): 
@@ -61,9 +61,7 @@ class CommandSocket:
                     self.handle_disconnection()
                 else: 
                     await self.parse_cmd(received_data=received_data)
-                    if self.notify:
-                        await self.notify()
-
+                   
     async def parse_cmd(self, received_data): 
         commands = {
             "notify_subscribers": self.notify_subscribers
