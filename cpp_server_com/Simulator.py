@@ -1,7 +1,7 @@
 from utils.data_handler import Data_Handler
 from utils.logger import log
 import random
-
+import asyncio
 
 
 class HSSUSB2A_Simulator: 
@@ -39,6 +39,7 @@ class HSSUSB2A_Simulator:
         self.data_handler.update_experiment_data({
             "data": self.EXPERIMENT_DATA
         })
+        
 
     def register_command_socket(self, command_socket): 
         self.data_handler.register_command_socket(command_socket)    

@@ -1,6 +1,7 @@
 from utils.utils import SetInterval
 from cpp_server_com import HSSUSB2A
 from cpp_server_com.Simulator import HSSUSB2A_Simulator
+import asyncio
 
 class Experiment: 
     EXPERIMENT_STATE = "START"
@@ -20,7 +21,8 @@ class Experiment:
     
     def start_experiment(self): 
         self.set_state("START")
-        self.timer.start()
+        self.device.data_handler.send_data_via_socket()
+        # self.timer.start()
 
     def stop_experiment(self): 
         self.set_state("STOP")

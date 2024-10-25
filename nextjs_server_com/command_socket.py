@@ -55,13 +55,15 @@ class CommandSocket:
                     logger.log("Error while receiving data: " + str(e),context="Command Socket", severity="error")
                     continue
             except socket.error as e:
-                logger.log("A socket error occured: " + str(e),context="Command Socket", severity="error")
+                logger.log("A socket error occured: " + str(e),context="Command Socket", severity="warning")
+                break
             else: 
                 if len(received_data) == 0: 
-                    self.handle_disconnection()
+                    break
                 else: 
                     await self.parse_cmd(received_data=received_data)
-                   
+        self.handle_disconnection()          
+
     async def parse_cmd(self, received_data): 
         commands = {
             "notify_subscribers": self.notify_subscribers
@@ -76,6 +78,7 @@ class CommandSocket:
         
         except Exception as err:
             logger.log("An error occured while trying to parse the data received: " + str(err),context="Command Socket", severity="error")
+            logger.log("Data: " + str(received_data.decode("utf-8")) ,context="Command Socket", severity="error")
              
 
 

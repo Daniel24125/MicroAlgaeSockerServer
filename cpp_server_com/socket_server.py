@@ -5,6 +5,7 @@ import json
 import time
 import socket
 import select
+import asyncio
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -19,11 +20,10 @@ class SpecServerSocket(utils.SocketServer):
     device_socket = None
     simulation_mode = True
 
-    def __init__(self, port=PORT): 
+    def __init__(self, ): 
         super().__init__()
-        self.init_socket(port)
 
-    def init_socket(self, port): 
+    def init_socket(self, port=PORT): 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sockets_list = [self.server_socket]
         self.server_socket.bind((HOST, port))
@@ -62,7 +62,6 @@ class SpecServerSocket(utils.SocketServer):
         else: 
             if len(data) == 0: 
                    self.handle_client_disconnection(client_socket)
-                   
             else: 
                 self.receive_cmd(data, client_socket=client_socket)
 
@@ -88,8 +87,6 @@ class SpecServerSocket(utils.SocketServer):
     def nir_spec_init(self, socket): 
         logger.log("Initializing the Spectrometer instance...",context="Python Spec Socket", severity="info")
         self.device_socket = socket
-        # self.spec = HSSUSB2A(socket)
-        self.simulation_mode = False
 
     def command_socket_init(self, socket): 
         logger.log("Command Client connected",context="Python Spec Socket", severity="info")
@@ -98,15 +95,12 @@ class SpecServerSocket(utils.SocketServer):
     
     def device_status(self, data, socket): 
         logger.log("Updating spec status...",context="Python Spec Socket", severity="info")
-        # self.spec.device_status(socket)
-        self.send_client_commands({
-            "cmd": "notify_subscribers"
-        })
+        self.send_client_commands({"cmd": "notify_subscribers"})
 
     def start_experiment(self, data, socket): 
         logger.log("Starting the experiment...",context="Python Spec Socket", severity="info")
         self.experiment_manager.start_experiment()
-
+    
     def stop_experiment(self, data, socket): 
         logger.log("Stopping the experiment...",context="Python Spec Socket", severity="info")
         self.experiment_manager.stop_experiment()
@@ -143,80 +137,3 @@ class SpecServerSocket(utils.SocketServer):
 
 
 
-
-
-
-
-
-# HOST = ""  # Standard loopback interface address (localhost)
-# PORT = 8000  # Port to listen on (non-privileged ports are > 1023)
-# CONNECTIONS = set()
-# spec = None
-
-# def identification(data, client_socket, *argv):
-#     if data == "nir": 
-#         print("NIR Socket Client detected!")
-#         spec = HSSUSB2A(client_socket)
-#     else:
-#         CONNECTIONS.add(client_socket)
-
-# async def device_status(data, client_socket): 
-#     spec_data = spec if bool(spec) else "Spectrometer not connected!"
-#     await client_socket.send(spec_data)
-
-# COMMANDS = {
-#     "identification": identification,
-#     "device_status": device_status
-# }
-
-# async def client_connection_handler(websocket):
-#     print("Client Connected")
-#     async for message in websocket:
-#         try: 
-#             rvc_data = json.loads(message)
-#             await parse_cmd(rvc_data, websocket)
-#         except ValueError as e: 
-#             print("Error while processing the JSON data")
-#         # await websocket.send(message)
-
-# async def main():
-#     async with serve(client_connection_handler, host="", port=PORT):
-#         print("Server listenning on port", PORT)
-#         await asyncio.get_running_loop().create_future()  # run forever
-
-# async def parse_cmd(cmd, client_socket):
-#     if not "cmd" in cmd: 
-#         raise Exception("Invalid JSON received")
-#     cmd_received = cmd["cmd"]
-#     data = cmd["data"]
-#     print(f"Parsing the following command: {cmd_received}")
-#     if cmd_received in COMMANDS:
-#         await COMMANDS[cmd_received](data, client_socket)
-#     else:
-#         print("Command not recognized")
-
-# def handle_client_disconnection(client_socket): 
-#     print("The client has been disconnected")
-#     CONNECTIONS.remove(client_socket)
-
-
-# def response_to_user_connection(self, client_socket, request): 
-#         print("Connection from Browser client!")
-#         response_body = [
-#             '<html><body><h1>Hello, world!</h1></body/></html/>',
-#         ]
-#         response_headers = {
-#             'Content-Type': 'text/html; encoding=utf8',
-
-#        }
-#         response_body_raw = ''.join(response_body)
-
-
-#         response_proto = 'HTTP/1.1'
-#         response_status = '200'
-#         response_status_text = 'OK' # this can be random
-#         client_socket.send(bytes('%s %s %s' % (response_proto, response_status, \
-#                                                         response_status_text), encoding="utf-8"))
-#         client_socket.send(bytes(json.dumps(response_headers), encoding="utf-8"))
-#         client_socket.send(b'\n') # to separate headers from body
-#         client_socket.send(bytes(response_body_raw, encoding="utf-8"))

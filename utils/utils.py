@@ -1,26 +1,43 @@
 from . import data_handler, logger
 import json 
 import threading
+import time 
+# class SetInterval: 
+#     def __init__(self, func, sec, func_args=None): 
+#         self.func = func
+#         self.sec = sec
+    
+#     def func_wrapper(self):
+#         # self.start()
+#         while not self.t.finished:
+#             self.func()
+    
+#     def start(self): 
+#         self.t = threading.Timer(self.sec, self.func_wrapper)
+#         self.t.start() 
+
+#     def stop(self): 
+#         self.t.cancel()
 
 class SetInterval: 
     def __init__(self, func, sec, func_args=None): 
         self.func = func
         self.sec = sec
+        self.STOP_TIMER = False
     
-    def func_wrapper(self):
-        self.start()
-        self.func()
+    def func_wrapper(self): 
+        while self.STOP_TIMER: 
+            self.func()    
+            time.sleep(self.sec)
     
     def start(self): 
-        self.t = threading.Timer(self.sec, self.func_wrapper)
-        self.t.start() 
+        if not self.STOP_TIMER: 
+            self.STOP_TIMER = True
+            t = threading.Thread(target=self.func_wrapper)
+            t.start()
 
     def stop(self): 
-        self.t.cancel()
-
-
-
-
+        self.STOP_TIMER = False
 
 class SocketServer(): 
     def __init__(self): 
@@ -50,8 +67,6 @@ class SocketServer():
            
     def handle_client_disconnection(self, client_socket): 
         logger.log("The client has been disconnected",context="Socket Server Parent Class")
-
-
 
 class SubscriberClass(): 
     def __init__(self, sio): 

@@ -1,6 +1,8 @@
 import json
 from utils.data_handler import Data_Handler
 from utils.logger import log
+
+
 class HSSUSB2A: 
     socket = None
     def __init__(self, device_socket): 
