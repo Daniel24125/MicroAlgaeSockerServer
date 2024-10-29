@@ -1,6 +1,5 @@
 import sys
 import os
-import socketio
 from aiohttp import web
 import asyncio 
 
@@ -17,7 +16,6 @@ sio = socketio.AsyncServer(cors_allowed_origins='*', async_mode='aiohttp')
 app = web.Application()
 sio.attach(app)
 
-subscriber = utils.SubscriberClass(sio)   
 command_instance = None
 
 

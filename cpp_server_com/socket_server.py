@@ -5,13 +5,13 @@ import json
 import time
 import socket
 import select
-import asyncio
+
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from utils import env_handler, logger, utils
-from . import experiment
+from socket_clients.command_socket import NextJSSocket
 
 HOST = env_handler.load_env("CPP_HOST") 
 PORT = int(env_handler.load_env("CPP_PORT"))
@@ -22,13 +22,13 @@ class SpecServerSocket(utils.SocketServer):
 
     def __init__(self, ): 
         super().__init__()
+        self.nexjs_client_handler = NextJSSocket()
 
     def init_socket(self, port=PORT): 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sockets_list = [self.server_socket]
         self.server_socket.bind((HOST, port))
         self.server_socket.listen()
-        self.experiment_manager = experiment.Experiment()
         logger.log(f"Server listenning on port {port}", context="Python Spec Socket", severity="info")
 
     def listen_for_connections(self): 
@@ -46,13 +46,13 @@ class SpecServerSocket(utils.SocketServer):
                 except ConnectionResetError as e: 
                     self.handle_client_disconnection(notified_socket)
                 except Exception as err: 
+                    
                     logger.log(f"An error occured: {str(err)}",context="Python Spec Socket",severity="error")   
-            time.sleep(1)
     
     def handle_data_reception(self, client_socket):
         logger.log("Waiting for Commands", context="Python Spec Socket",severity="default")
         try: 
-            data = client_socket.recv(1024) 
+            data = client_socket.recv(1024)
         except socket.timeout as e:
             err = e.args[0]
             if err != 'timed out':
@@ -63,7 +63,7 @@ class SpecServerSocket(utils.SocketServer):
             if len(data) == 0: 
                    self.handle_client_disconnection(client_socket)
             else: 
-                self.receive_cmd(data, client_socket=client_socket)
+                self.receive_cmd(data, client_socket)
 
     def parse_cmd(self, cmd, client_socket):
         commands = {
@@ -79,7 +79,7 @@ class SpecServerSocket(utils.SocketServer):
         if data == "nir": 
             self.nir_spec_init(client_socket)
         elif data == "next": 
-            self.command_socket_init(client_socket)     
+            self.nexjs_client_handler.init_client(client_socket)
         else: 
             raise Exception("Unauthorized connection.")
         self.sockets_list.append(client_socket)
@@ -88,14 +88,9 @@ class SpecServerSocket(utils.SocketServer):
         logger.log("Initializing the Spectrometer instance...",context="Python Spec Socket", severity="info")
         self.device_socket = socket
 
-    def command_socket_init(self, socket): 
-        logger.log("Command Client connected",context="Python Spec Socket", severity="info")
-        self.command_client_socket = socket
-        self.experiment_manager.register_command_socket(socket)
-    
     def device_status(self, data, socket): 
         logger.log("Updating spec status...",context="Python Spec Socket", severity="info")
-        self.send_client_commands({"cmd": "notify_subscribers"})
+        self.nexjs_client_handler.subscriber.notify_subscribers()
 
     def start_experiment(self, data, socket): 
         logger.log("Starting the experiment...",context="Python Spec Socket", severity="info")
@@ -119,14 +114,14 @@ class SpecServerSocket(utils.SocketServer):
       
 
     def send_client_commands(self, msg): 
-        if hasattr(self, "command_client_socket"):
-            self.command_client_socket.send(bytes(json.dumps(msg),encoding="utf-8"))
+        if hasattr(self, "nextjs_socket"):
+            self.nextjs_socket.send(bytes(json.dumps(msg),encoding="utf-8"))
         else:
             logger.log("Command socket client not available!", context="Python Spec Socket", severity="info")
     
-    def send_spectrometer_command(self, msg): 
+    def send_spectrometer_command(self, cmd): 
         if hasattr(self, "device_socket"):
-            self.device_socket.send(bytes(json.dumps(msg),encoding="utf-8"))
+            self.device_socket.send(bytes(json.dumps(cmd),encoding="utf-8"))
 
 
 
