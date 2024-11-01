@@ -10,7 +10,7 @@ import select
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from utils import env_handler, logger, utils
+from resources import env_handler, logger, utils
 from socket_clients.command_socket import NextJSSocket
 
 HOST = env_handler.load_env("CPP_HOST") 

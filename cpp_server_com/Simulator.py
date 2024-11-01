@@ -1,5 +1,5 @@
-from utils.data_handler import Data_Handler
-from utils.logger import log
+from resources.data_handler import Data_Handler
+from resources.logger import log
 import random
 import asyncio
 

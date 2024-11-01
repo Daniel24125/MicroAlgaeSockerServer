@@ -1,4 +1,4 @@
-from utils.utils import SetInterval
+from resources.utils import SetInterval
 from cpp_server_com import HSSUSB2A
 from cpp_server_com.Simulator import HSSUSB2A_Simulator
 import asyncio
