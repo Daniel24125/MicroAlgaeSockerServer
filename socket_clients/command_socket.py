@@ -7,7 +7,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from resources import env_handler, logger, utils
-from cpp_server_com.experiment import Experiment
+from resources.experiment import Experiment
 HOST = env_handler.load_env("CPP_HOST")
 PORT = int(env_handler.load_env("CPP_PORT"))
 

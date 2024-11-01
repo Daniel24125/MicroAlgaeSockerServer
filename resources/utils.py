@@ -4,6 +4,7 @@ import threading
 import time 
 import hashlib
 import base64
+import asyncio
 
 class SetInterval: 
     def __init__(self, func, sec, func_args=None): 
@@ -11,16 +12,15 @@ class SetInterval:
         self.sec = sec
         self.STOP_TIMER = False
     
-    def func_wrapper(self): 
+    async def func_wrapper(self): 
         while self.STOP_TIMER: 
-            self.func()    
-            time.sleep(self.sec)
+            await self.func()    
+            await asyncio.sleep(self.sec)
     
-    def start(self): 
+    async def start(self): 
         if not self.STOP_TIMER: 
             self.STOP_TIMER = True
-            t = threading.Thread(target=self.func_wrapper)
-            t.start()
+            await self.func_wrapper()
 
     def stop(self): 
         self.STOP_TIMER = False
@@ -85,29 +85,29 @@ class SocketServer():
 
 class SubscriberClass(): 
     def __init__(self): 
-        self.__subscriber_list = []
+        self._subscriber_list = set()
         self.device_data = data_handler.Data_Handler()
         
     def add_subscriber_to_list(self, socket): 
-        logger.log("Adding client socket to the subscribers list", context="Subscriber", severity="info")
-        self.__subscriber_list.append(socket)
-        logger.log("Number of subscribers: " + str(self.get_num_subscribers()), context="Subscriber", severity="info")
+        logger.log("Adding client socket to the subscribers list. Number of subscribers: "+str(self.get_num_subscribers()), context="Subscriber", severity="info")
+        self._subscriber_list.add(socket)
 
-    def notify_user(self, socket): 
-        socket.send(bytes(json.dumps(self.device_data.retrieve_data_from_file()),encoding="utf-8"))
+    async def notify_user(self, socket): 
+        data = json.dumps(self.device_data.retrieve_data_from_file())
+        await socket.send(data)
 
-    def notify_subscribers(self): 
-        if len(self.__subscriber_list) > 0: 
+    async def broadcast_data(self): 
+        if len(self._subscriber_list) > 0: 
             logger.log("Notifying all the subscribers", context="Subscriber", severity="info")
-            for s in self.__subscriber_list: 
-                self.notify_user(s)
+            for s in self._subscriber_list: 
+                await self.notify_user(s)
 
     def get_num_subscribers(self): 
-        return len(self.__subscriber_list)
+        return len(self._subscriber_list)
 
     def unsubscribe(self, socket): 
         logger.log("Unsubscribing NextJS client...", context="Subscriber", severity="info")
-        self.__subscriber_list.remove(socket)
+        self._subscriber_list.remove(socket)
         
 
 

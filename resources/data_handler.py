@@ -16,8 +16,7 @@ class Data_Handler:
     
     def __init__(self):
         self.experiment_data = None
-        self.command_socket = None
-        # self.init_db()
+        self.websocket = None
         self.read_experiment_data()
 
     ################ MONGO DB METHODS
@@ -51,16 +50,15 @@ class Data_Handler:
         data = self.retrieve_data_from_file(path_to_file)
         self.experiment_data = data
 
-    def update_experiment_data(self, newData, commit_changes = True):
+    async def update_experiment_data(self, newData, commit_changes = True):
         self.experiment_data = {**self.experiment_data,**newData}
         if commit_changes: self.commit_experiment_changes()
-        if self.command_socket: self.send_data_via_socket()
+        if self.websocket: await self.send_data()
 
-    def send_data_via_socket(self): 
-        log("Sending updated data to the command socket\n","Experimental Data Handler", "info")
-        if hasattr(self, "command_socket"):
-            self.command_socket.send(bytes(json.dumps({"cmd": "notify_subscribers"}),encoding="utf-8"))
-
+    async def send_data(self):
+        print("Sending data to client") 
+        data = json.dumps(self.experiment_data)
+        await self.websocket.send(data)
 
     def commit_experiment_changes(self): 
         if not self.updating_experiment:
@@ -98,10 +96,5 @@ class Data_Handler:
             f.close()
         self.updating_experiment = False
 
-    #COMMAND SOCKET    
-
-    def register_command_socket(self, socket):
-        self.command_socket = socket
-
-    def unregister_command_socket(self):
-        self.command_socket = None
+    def register_nexjs_websocket(self, websocket):
+        self.websocket = websocket

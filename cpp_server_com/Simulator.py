@@ -25,7 +25,13 @@ class HSSUSB2A_Simulator:
     def __init__(self): 
         self.data_handler = Data_Handler()
 
-    def update_experimental_data(self): 
+    async def update_experimental_data(self): 
+        self.update_params()
+        await self.data_handler.update_experiment_data({
+            "data": self.EXPERIMENT_DATA
+        })
+        
+    def update_params(self): 
         self.update_param("dissolvedCO2", self.get_random_value(1, 10))
         self.update_param("dissolvedO2", self.get_random_value(1, 10))
         self.update_param("glucose", self.get_random_value(10, 100))
@@ -36,13 +42,9 @@ class HSSUSB2A_Simulator:
         self.update_param("urea", self.get_random_value(1, 10))
         self.update_param("ortofosfate", self.get_random_value(1, 10))
         self.update_param("totalCellCount", self.get_random_value(10, 1000))
-        self.data_handler.update_experiment_data({
-            "data": self.EXPERIMENT_DATA
-        })
-        
 
-    def register_command_socket(self, command_socket): 
-        self.data_handler.register_command_socket(command_socket)    
+    def register_nexjs_websocket(self, websocket): 
+        self.data_handler.register_nexjs_websocket(websocket)    
 
     def update_param(self, param, value): 
         if param in self.EXPERIMENT_DATA: 
