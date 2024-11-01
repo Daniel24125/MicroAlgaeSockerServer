@@ -1,5 +1,5 @@
 from cpp_server_com.socket_server import SpecServerSocket
-from utils.logger import log
+from resources.logger import log
 
 
 

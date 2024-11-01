@@ -1,6 +1,5 @@
 import sys
 import os
-import socketio
 from aiohttp import web
 import asyncio 
 
@@ -8,7 +7,7 @@ import asyncio
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from utils import env_handler, logger, utils
+from resources import env_handler, logger, utils
 
 PORT = int(env_handler.load_env("NEXTJS_PORT"))
 
@@ -17,7 +16,6 @@ sio = socketio.AsyncServer(cors_allowed_origins='*', async_mode='aiohttp')
 app = web.Application()
 sio.attach(app)
 
-subscriber = utils.SubscriberClass(sio)   
 command_instance = None
 
 

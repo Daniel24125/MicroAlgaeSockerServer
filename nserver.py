@@ -1,7 +1,7 @@
 from nextjs_server_com.socket_server import start_server
-from utils.logger import log
+from resources.logger import log
 from threading import Thread
-from nextjs_server_com.command_socket import CommandSocket
+from socket_clients.command_socket import CommandSocket
 import asyncio 
 
 
