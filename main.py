@@ -5,7 +5,7 @@ HOST = env_handler.load_env("CPP_HOST")
 CPP_PORT = int(env_handler.load_env("CPP_PORT"))
 NEXTJS_PORT = int(env_handler.load_env("NEXTJS_PORT"))
 
-async def handle_websocket(websocket, path):
+async def handle_next_connection(websocket, path):
     print("Connection made!", path)
     try:
         async for message in websocket:
@@ -16,7 +16,7 @@ async def handle_websocket(websocket, path):
 
 
 
-async def handle_tcp(reader, writer):
+async def handle_device_connection(reader, writer):
     print("Connection made!")
     logger.log("A device connection was made", "MAIN - NIR Connection", "info")
 
@@ -34,9 +34,9 @@ async def handle_tcp(reader, writer):
 
 async def main():
 
-    websocket_server = await websockets.serve(handle_websocket, HOST, NEXTJS_PORT)
+    websocket_server = await websockets.serve(handle_next_connection, HOST, NEXTJS_PORT)
     logger.log("NEXTJS Server listenning on port " + str(NEXTJS_PORT), "MAIN", "info")
-    tcp_server = await asyncio.start_server(handle_tcp, HOST, CPP_PORT)
+    tcp_server = await asyncio.start_server(handle_device_connection, HOST, CPP_PORT)
     logger.log("NIR Server listenning on port " + str(CPP_PORT), "MAIN", "info")    
     await asyncio.gather(websocket_server.wait_closed(), tcp_server.serve_forever())
 
