@@ -89,8 +89,8 @@ class SubscriberClass():
         self.device_data = data_handler.Data_Handler()
         
     def add_subscriber_to_list(self, socket): 
-        logger.log("Adding client socket to the subscribers list. Number of subscribers: "+str(self.get_num_subscribers()), context="Subscriber", severity="info")
         self._subscriber_list.add(socket)
+        logger.log("Adding client socket to the subscribers list. Number of subscribers: "+str(self.get_num_subscribers()), context="Subscriber", severity="info")
 
     async def notify_user(self, socket): 
         data = json.dumps(self.device_data.retrieve_data_from_file())

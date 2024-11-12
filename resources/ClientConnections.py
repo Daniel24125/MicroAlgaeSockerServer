@@ -65,6 +65,6 @@ class NextJSClientConnection(Connection):
         logger.log("Starting the experiment...",context="Python Spec Socket", severity="info")
         await self.experiment_manager.start_experiment()
     
-    def stop_experiment(self, data): 
+    async def stop_experiment(self, data): 
         logger.log("Stopping the experiment...",context="Python Spec Socket", severity="info")
-        self.experiment_manager.stop_experiment()
+        await self.experiment_manager.stop_experiment()

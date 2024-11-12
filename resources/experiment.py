@@ -1,7 +1,7 @@
 from resources.utils import SetInterval
 from cpp_server_com import HSSUSB2A
 from cpp_server_com.Simulator import HSSUSB2A_Simulator
-
+from .utils import logger
 class Experiment: 
     EXPERIMENT_STATE = "START"
    
@@ -24,6 +24,7 @@ class Experiment:
         await self.timer.start()
 
     async def stop_experiment(self): 
+        logger.log("Stop Experiment", "Experiment", "info")
         self.set_state("STOP")
         self.timer.stop()
 
